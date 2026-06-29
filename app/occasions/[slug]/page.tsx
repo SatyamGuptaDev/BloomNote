@@ -13,8 +13,9 @@ export function generateStaticParams() {
   }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }) {
-  const occasion = OCCASIONS.find(o => o.slug === params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const occasion = OCCASIONS.find(o => o.slug === slug);
   if (!occasion) return { title: 'Occasion not found' };
   
   return {
@@ -23,9 +24,10 @@ export function generateMetadata({ params }: { params: { slug: string } }) {
   };
 }
 
-export default function OccasionPage({ params }: { params: { slug: string } }) {
-  const occasion = OCCASIONS.find(o => o.slug === params.slug);
-  
+export default async function OccasionPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const occasion = OCCASIONS.find(o => o.slug === slug);
+
   if (!occasion) {
     notFound();
   }

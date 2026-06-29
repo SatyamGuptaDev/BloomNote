@@ -21,8 +21,9 @@ export function generateStaticParams() {
   }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }) {
-  const post = BLOG_POSTS.find(p => p.slug === params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = BLOG_POSTS.find(p => p.slug === slug);
   if (!post) return { title: 'Post not found' };
   
   return {
@@ -97,8 +98,9 @@ const getContentForSlug = (slug: string) => {
   }
 };
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = BLOG_POSTS.find(p => p.slug === params.slug);
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = BLOG_POSTS.find(p => p.slug === slug);
   
   if (!post) {
     return (

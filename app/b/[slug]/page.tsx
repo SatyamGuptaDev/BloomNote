@@ -19,9 +19,10 @@ async function getBouquet(slug: string) {
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const bouquet = await getBouquet(params.slug);
-  
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const bouquet = await getBouquet(slug);
+
   if (!bouquet || bouquet === 'expired') {
     return {
       title: 'Bouquet Not Found | Dear Bloomy',
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title,
       description,
       type: 'website',
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/b/${params.slug}`,
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/b/${slug}`,
       siteName: 'Dear Bloomy',
       images: [
         {
@@ -59,8 +60,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function ViewBouquetPage({ params }: { params: { slug: string } }) {
-  const bouquet = await getBouquet(params.slug);
+export default async function ViewBouquetPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const bouquet = await getBouquet(slug);
 
   if (bouquet === 'expired') {
     return (
