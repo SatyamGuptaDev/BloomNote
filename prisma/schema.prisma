@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bouquet {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  flowers     Json     // Array of flower objects with position, scale, rotation, zIndex
+  note        String?  @db.Text
+  fromName    String?
+  font        String   @default("serif")
+  textColor   String   @default("#4a4a4a")
+  music       String?  // "acoustic" | "emotional" | "chill" | null
+  bgColor     String   @default("#fdf6f0")
+  bgImage     String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime @default(dbgenerated("now() + interval '30 days'"))
+  
+  @@index([slug])
+  @@index([expiresAt])
+}
+
+model BlogPost {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  excerpt       String
+  content       String   @db.Text
+  featuredImage String?
+  category      String
+  tags          String[]
+  publishedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  views         Int      @default(0)
+  
+  @@index([slug])
+  @@index([category])
+  @@index([publishedAt])
+}
+
+model Template {
+  id          String  @id @default(cuid())
+  occasion    String
+  flowers     Json
+  note        String
+  fromName    String?
+  font        String  @default("serif")
+  textColor   String  @default("#4a4a4a")
+  music       String?
+  bgColor     String  @default("#fdf6f0")
+  isFeatured  Boolean @default(false)
+}
