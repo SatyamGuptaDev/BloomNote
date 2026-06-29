@@ -1,0 +1,6 @@
+{
+  "name": "Petals & Words",
+  "description": "A beautiful, SEO-friendly full-stack platform for Petals & Words.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
