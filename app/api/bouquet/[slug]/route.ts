@@ -4,10 +4,10 @@ import { isBouquetExpired } from '@/lib/utils'
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: { slug: string } }
 ) {
   try {
-    const { slug } = await params
+    const { slug } = params
     const bouquet = await prisma.bouquet.findUnique({
       where: { slug }
     })
