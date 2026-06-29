@@ -26,7 +26,7 @@ export function generateMetadata({ params }: { params: { slug: string } }) {
   if (!post) return { title: 'Post not found' };
   
   return {
-    title: `${post.title} | BloomNote Blog`,
+    title: `${post.title} | Dear Bloomy Blog`,
     description: post.excerpt
   };
 }
@@ -36,8 +36,8 @@ const getContentForSlug = (slug: string) => {
     case '5-things-to-write-just-because':
       return (
         <>
-          <p>Hey everyone, it’s the BloomNote team here. As product builders and relationship enthusiasts, we spend a lot of time thinking about how people connect. The absolute best gifts aren't the ones expected on birthdays or anniversaries—they are the spontaneous "just because" moments that show someone you were actively thinking of them on a random Tuesday.</p>
-          <p>We built BloomNote precisely for these moments. But when you load up that blank note card, sometimes the cursor just blinks at you. What do you actually say?</p>
+          <p>Hey everyone, it’s the Dear Bloomy team here. As product builders and relationship enthusiasts, we spend a lot of time thinking about how people connect. The absolute best gifts aren't the ones expected on birthdays or anniversaries—they are the spontaneous "just because" moments that show someone you were actively thinking of them on a random Tuesday.</p>
+          <p>We built Dear Bloomy precisely for these moments. But when you load up that blank note card, sometimes the cursor just blinks at you. What do you actually say?</p>
           <h2 className="text-3xl mt-12 mb-6">1. The 'I Saw This and Thought of You'</h2>
           <p>Relatability is everything. "I walked past that coffee shop we always used to go to and it made me smile. Hope you're having a great week." It's low-pressure, highly personal, and instantly makes them feel seen.</p>
           <h2 className="text-3xl mt-12 mb-6">2. The Micro-Encouragement</h2>
@@ -57,7 +57,7 @@ const getContentForSlug = (slug: string) => {
           <p>Yellow is sunshine. It's platonic, joyful, and optimistic. It's the perfect color to send to a best friend or a colleague who just secured a massive win.</p>
           <h2 className="text-3xl mt-12 mb-6">White: The Blank Canvas</h2>
           <p>White roses signify purity, new beginnings, and remembrance. They are elegant, understated, and often used for weddings or to offer sympathy.</p>
-          <p>When you're building a bouquet on BloomNote, think of the colors as your color palette for emotion. Mix and match to create exactly the vibe you want.</p>
+          <p>When you're building a bouquet on Dear Bloomy, think of the colors as your color palette for emotion. Mix and match to create exactly the vibe you want.</p>
         </>
       );
     case 'digital-gifting-trend':
@@ -78,7 +78,7 @@ const getContentForSlug = (slug: string) => {
             Sometimes the most meaningful gestures are the simplest ones. In our fast-paced, hyper-connected world, taking a minute to slow down and craft something beautiful for someone else stands out.
           </p>
           <p>
-            When we designed BloomNote, we looked at how people were communicating. Text messages felt too brief, while traditional gifting felt too heavy and full of friction. We needed a middle ground—a digital artifact that carried emotional weight without the logistical nightmare.
+            When we designed Dear Bloomy, we looked at how people were communicating. Text messages felt too brief, while traditional gifting felt too heavy and full of friction. We needed a middle ground—a digital artifact that carried emotional weight without the logistical nightmare.
           </p>
           <h2 className="text-3xl mt-12 mb-6">The Power of Intent</h2>
           <p>

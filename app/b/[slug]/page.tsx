@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   
   if (!bouquet || bouquet === 'expired') {
     return {
-      title: 'Bouquet Not Found | BloomNote',
+      title: 'Bouquet Not Found | Dear Bloomy',
       description: 'This bouquet does not exist or has expired.',
     };
   }
@@ -33,14 +33,14 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const description = bouquet.note ? `"${bouquet.note.substring(0, 100)}${bouquet.note.length > 100 ? '...' : ''}" - Click to open your bouquet.` : 'Open your digital bouquet to reveal the flowers and message inside.';
   
   return {
-    title: `${title} | BloomNote`,
+    title: `${title} | Dear Bloomy`,
     description,
     openGraph: {
       title,
       description,
       type: 'website',
       url: `${process.env.NEXT_PUBLIC_APP_URL}/b/${params.slug}`,
-      siteName: 'BloomNote',
+      siteName: 'Dear Bloomy',
       images: [
         {
           url: `${process.env.NEXT_PUBLIC_APP_URL}/api/og?title=${encodeURIComponent(title)}`,

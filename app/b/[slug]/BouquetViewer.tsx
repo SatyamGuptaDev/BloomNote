@@ -75,7 +75,7 @@ export function BouquetViewer({ bouquet }: BouquetViewerProps) {
       });
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       const link = document.createElement('a');
-      link.download = `bouquet-from-${bouquet.fromName || 'bloomnote'}.jpg`;
+      link.download = `bouquet-from-${bouquet.fromName || 'dearbloomy'}.jpg`;
       link.href = dataUrl;
       link.click();
     } catch (error) {
@@ -195,7 +195,7 @@ export function BouquetViewer({ bouquet }: BouquetViewerProps) {
 
       <footer className="absolute bottom-6 left-0 right-0 text-center z-10">
         <Link href="/" className="text-xs font-medium text-[var(--stone)]/60 hover:text-[var(--rose)] transition-colors">
-          Made with BloomNote
+          Made with Dear Bloomy
         </Link>
       </footer>
     </div>

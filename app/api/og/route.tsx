@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
               marginTop: 40,
             }}
           >
-            BloomNote
+            Dear Bloomy
           </div>
         </div>
       ),

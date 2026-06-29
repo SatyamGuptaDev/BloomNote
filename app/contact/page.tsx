@@ -3,7 +3,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Mail } from 'lucide-react';
 
 export const metadata = {
-  title: 'Contact Us | BloomNote',
+  title: 'Contact Us | Dear Bloomy',
 };
 
 export default function ContactPage() {
@@ -22,8 +22,8 @@ export default function ContactPage() {
           
           <div className="bg-[var(--cream)] p-8 rounded-2xl border border-[var(--blush)] max-w-lg mx-auto">
             <p className="text-[var(--charcoal)] font-medium text-lg mb-2">Email us at</p>
-            <a href="mailto:hello@bloomnote.com" className="text-2xl font-heading text-[var(--rose)] hover:underline">
-              hello@bloomnote.com
+            <a href="mailto:hello@dearbloomy.com" className="text-2xl font-heading text-[var(--rose)] hover:underline">
+              hello@dearbloomy.com
             </a>
             <p className="text-[var(--stone)] mt-6 text-sm">
               We try to respond to all inquiries within 24-48 hours.

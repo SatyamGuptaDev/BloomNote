@@ -2,7 +2,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 
 export const metadata = {
-  title: 'Privacy Policy | BloomNote',
+  title: 'Privacy Policy | Dear Bloomy',
 };
 
 export default function PrivacyPage() {

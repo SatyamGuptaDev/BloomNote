@@ -7,93 +7,125 @@ interface FlowerSVGProps {
   className?: string;
 }
 
+// Real photographic flower cut-outs (transparent PNGs in /public/flowers).
+// Drop a new PNG named "<type>.png" here to upgrade any flower to a real photo.
+const IMAGE_FLOWERS: Record<string, string> = {
+  daisy: '/flowers/daisy.png',
+  sunflower: '/flowers/sunflower.png',
+};
+
+// helper: a ring of petals rotated around the centre (50,50)
+function ring(count: number, render: (i: number) => React.ReactNode, start = 0) {
+  return Array.from({ length: count }).map((_, i) => (
+    <g key={i} transform={`rotate(${start + i * (360 / count)} 50 50)`}>
+      {render(i)}
+    </g>
+  ));
+}
+
+function Rose({ outer, mid, inner, core, stroke }: { outer: string; mid: string; inner: string; core: string; stroke?: string }) {
+  const petal = (rx: number, ry: number, cy: number, fill: string) => (
+    <ellipse cx="50" cy={cy} rx={rx} ry={ry} fill={fill} stroke={stroke} strokeWidth={stroke ? 1 : 0} />
+  );
+  return (
+    <>
+      <g>{ring(6, () => petal(11, 15, 28, outer), 0)}</g>
+      <g>{ring(6, () => petal(9, 12, 33, mid), 30)}</g>
+      <g>{ring(5, () => petal(6.5, 9, 38, inner), 0)}</g>
+      <circle cx="50" cy="50" r="4.5" fill={core} stroke={stroke} strokeWidth={stroke ? 0.8 : 0} />
+    </>
+  );
+}
+
 export const FlowerSVG = memo(function FlowerSVG({ type, width = 60, height = 60, className = '' }: FlowerSVGProps) {
-  // Common styles for SVGs
+  // Real photo flower → render the image, scaled to fit a square box.
+  const imgSrc = IMAGE_FLOWERS[type];
+  if (imgSrc) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={imgSrc}
+        alt={type.replace('-', ' ')}
+        width={width}
+        height={height}
+        draggable={false}
+        className={`block select-none object-contain drop-shadow-md ${className}`}
+        style={{ width, height }}
+      />
+    );
+  }
+
   const svgClass = `block drop-shadow-sm ${className}`;
-  const viewBox = "0 0 100 100";
+  const viewBox = '0 0 100 100';
+  const wrap = (children: React.ReactNode) => (
+    <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {children}
+    </svg>
+  );
 
   switch (type) {
     case 'rose-pink':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 20C40 20 30 35 30 50C30 65 40 80 50 80C60 80 70 65 70 50C70 35 60 20 50 20Z" fill="#F472B6" />
-          <path d="M50 25C43 25 35 38 35 50C35 62 43 75 50 75C57 75 65 62 65 50C65 38 57 25 50 25Z" fill="#F9A8D4" />
-          <path d="M50 35C45 35 40 43 40 50C40 57 45 65 50 65C55 65 60 57 60 50C60 43 55 35 50 35Z" fill="#FBCFE8" />
-          <circle cx="50" cy="50" r="5" fill="#FDF2F8" />
-        </svg>
-      );
+      return wrap(<Rose outer="#EC4899" mid="#F472B6" inner="#F9A8D4" core="#FCE7F3" />);
     case 'rose-red':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 20C40 20 30 35 30 50C30 65 40 80 50 80C60 80 70 65 70 50C70 35 60 20 50 20Z" fill="#EF4444" />
-          <path d="M50 25C43 25 35 38 35 50C35 62 43 75 50 75C57 75 65 62 65 50C65 38 57 25 50 25Z" fill="#F87171" />
-          <path d="M50 35C45 35 40 43 40 50C40 57 45 65 50 65C55 65 60 57 60 50C60 43 55 35 50 35Z" fill="#FCA5A5" />
-          <circle cx="50" cy="50" r="5" fill="#FEE2E2" />
-        </svg>
-      );
+      return wrap(<Rose outer="#DC2626" mid="#EF4444" inner="#F87171" core="#FECACA" />);
     case 'rose-white':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 20C40 20 30 35 30 50C30 65 40 80 50 80C60 80 70 65 70 50C70 35 60 20 50 20Z" fill="#F3F4F6" />
-          <path d="M50 25C43 25 35 38 35 50C35 62 43 75 50 75C57 75 65 62 65 50C65 38 57 25 50 25Z" fill="#F9FAFB" />
-          <path d="M50 35C45 35 40 43 40 50C40 57 45 65 50 65C55 65 60 57 60 50C60 43 55 35 50 35Z" fill="#FFFFFF" />
-          <circle cx="50" cy="50" r="5" fill="#F3F4F6" />
-        </svg>
-      );
+      return wrap(<Rose outer="#E5E7EB" mid="#F3F4F6" inner="#FCFCFD" core="#FFFFFF" stroke="#D1D5DB" />);
+
     case 'tulip-yellow':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 80C35 80 25 60 30 30L40 45L50 25L60 45L70 30C75 60 65 80 50 80Z" fill="#FBBF24" />
-          <path d="M50 80C42 80 35 65 38 40L45 50L50 35L55 50L62 40C65 65 58 80 50 80Z" fill="#FCD34D" />
-        </svg>
+    case 'tulip-purple': {
+      const [base, light] = type === 'tulip-yellow' ? ['#F59E0B', '#FCD34D'] : ['#8B5CF6', '#C4B5FD'];
+      return wrap(
+        <>
+          <path d="M50 30 C 56 45 56 70 50 88 C 44 70 44 45 50 30 Z" fill="#4D7C0F" opacity="0" />
+          <rect x="48.5" y="55" width="3" height="34" rx="1.5" fill="#65A30D" />
+          <path d="M50 60 C 70 58 82 44 80 34 C 70 44 54 50 50 60 Z" fill="#84CC16" />
+          {/* cup */}
+          <path d="M30 34 C 33 64 40 84 50 84 C 60 84 67 64 70 34 L60 46 L50 30 L40 46 Z" fill={base} />
+          <path d="M40 40 C 42 64 46 80 50 82 C 54 80 58 64 60 40 L55 47 L50 36 L45 47 Z" fill={light} />
+        </>
       );
-    case 'tulip-purple':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 80C35 80 25 60 30 30L40 45L50 25L60 45L70 30C75 60 65 80 50 80Z" fill="#A78BFA" />
-          <path d="M50 80C42 80 35 65 38 40L45 50L50 35L55 50L62 40C65 65 58 80 50 80Z" fill="#C4B5FD" />
-        </svg>
-      );
+    }
+
     case 'sunflower':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="40" fill="#FDE047" />
-          <circle cx="50" cy="50" r="30" fill="#FACC15" />
-          <circle cx="50" cy="50" r="20" fill="#78350F" />
-          <circle cx="50" cy="50" r="15" fill="#451A03" />
-        </svg>
+      return wrap(
+        <>
+          <g>{ring(14, () => <ellipse cx="50" cy="20" rx="5" ry="15" fill="#FBBF24" />, 0)}</g>
+          <g>{ring(14, () => <ellipse cx="50" cy="22" rx="4" ry="13" fill="#FDE047" />, 12)}</g>
+          <circle cx="50" cy="50" r="17" fill="#92400E" />
+          <circle cx="50" cy="50" r="12" fill="#78350F" />
+        </>
       );
+
     case 'daisy':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="40" fill="#FFFFFF" />
-          <circle cx="50" cy="50" r="15" fill="#FDE047" />
-        </svg>
+      return wrap(
+        <>
+          <g>{ring(12, () => <ellipse cx="50" cy="22" rx="5.5" ry="15" fill="#FFFFFF" stroke="#F3F4F6" strokeWidth="0.8" />, 0)}</g>
+          <circle cx="50" cy="50" r="11" fill="#FBBF24" />
+          <circle cx="50" cy="50" r="6" fill="#F59E0B" />
+        </>
       );
+
     case 'lily':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 50L20 20C30 10 70 10 80 20L50 50Z" fill="#FDF2F8" />
-          <path d="M50 50L80 20C90 30 90 70 80 80L50 50Z" fill="#FCE7F3" />
-          <path d="M50 50L80 80C70 90 30 90 20 80L50 50Z" fill="#FDF2F8" />
-          <path d="M50 50L20 80C10 70 10 30 20 20L50 50Z" fill="#FCE7F3" />
-          <circle cx="50" cy="50" r="8" fill="#FDE047" />
-        </svg>
+      return wrap(
+        <>
+          <g>{ring(6, () => <path d="M50 50 C 44 30 47 14 50 8 C 53 14 56 30 50 50 Z" fill="#FBCFE8" />, 0)}</g>
+          <g>{ring(6, () => <path d="M50 50 C 47 34 48 22 50 18 C 52 22 53 34 50 50 Z" fill="#FDF2F8" />, 30)}</g>
+          <circle cx="50" cy="50" r="5" fill="#FDE047" />
+          <g>{ring(5, () => <circle cx="50" cy="44" r="1.6" fill="#F59E0B" />, 0)}</g>
+        </>
       );
+
     case 'greenery':
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 90C45 90 45 20 50 10C55 20 55 90 50 90Z" fill="#4ADE80" />
-          <path d="M50 70C30 60 10 40 20 30C30 40 50 60 50 70Z" fill="#86EFAC" />
-          <path d="M50 50C70 40 90 20 80 10C70 20 50 40 50 50Z" fill="#86EFAC" />
-        </svg>
+      return wrap(
+        <>
+          <path d="M50 92 C 50 70 50 35 50 12" stroke="#4D7C0F" strokeWidth="3" strokeLinecap="round" />
+          <path d="M50 30 C 32 28 18 14 20 8 C 32 12 48 20 50 30 Z" fill="#84CC16" />
+          <path d="M50 48 C 68 46 82 32 80 26 C 68 30 52 38 50 48 Z" fill="#65A30D" />
+          <path d="M50 62 C 34 60 22 48 24 42 C 34 46 48 52 50 62 Z" fill="#84CC16" />
+        </>
       );
+
     default:
-      // Fallback
-      return (
-        <svg width={width} height={height} viewBox={viewBox} className={svgClass} fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="20" fill="#E8A0A0" />
-        </svg>
-      );
+      return wrap(<Rose outer="#C16E7E" mid="#D98A98" inner="#E8B5BF" core="#FFF" />);
   }
 });

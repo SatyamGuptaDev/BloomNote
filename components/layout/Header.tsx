@@ -2,9 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './Logo';
+
+function Avatar({ name, email }: { name?: string | null; email?: string | null }) {
+  const initial = (name?.trim()?.[0] || email?.trim()?.[0] || 'U').toUpperCase();
+  return (
+    <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--rose)] text-sm font-semibold text-white">
+      {initial}
+    </span>
+  );
+}
 
 interface HeaderProps {
   variant?: 'default' | 'minimal';
@@ -13,6 +24,7 @@ interface HeaderProps {
 export function Header({ variant = 'default' }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [recentBouquets, setRecentBouquets] = useState<{slug: string, fromName: string | null, note: string | null, date: string}[]>([]);
+  const { data: session } = useSession();
 
   useEffect(() => {
     try {
@@ -25,19 +37,9 @@ export function Header({ variant = 'default' }: HeaderProps) {
     }
   }, []);
 
-  const Logo = () => (
-    <Link href="/" className="flex items-center gap-2">
-      <svg className="w-6 h-6 text-[var(--rose)]" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C7.5 2 4 5.5 4 10c0 4.5 3.5 12 8 12s8-7.5 8-12c0-4.5-3.5-8-8-8zm0 18c-3.3 0-6-6-6-10 0-3.3 2.7-6 6-6s6 2.7 6 6c0 4 2.7 10-6 10z" />
-        <path d="M12 7c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3zm0 4c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z" />
-      </svg>
-      <span className="font-heading text-xl text-[var(--charcoal)] font-semibold">BloomNote</span>
-    </Link>
-  );
-
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-md border-b border-[var(--blush)]/50 h-16">
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-[var(--blush)] shadow-sm shadow-[var(--charcoal)]/[0.03] h-16">
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
           <Logo />
 
@@ -101,13 +103,39 @@ export function Header({ variant = 'default' }: HeaderProps) {
                 )}
               </nav>
 
-              {/* Desktop CTA */}
-              <div className="hidden md:block">
-                <Link 
-                  href="/create" 
+              {/* Desktop CTA + Auth */}
+              <div className="hidden md:flex items-center gap-4">
+                {session?.user ? (
+                  <div className="relative group">
+                    <button className="flex items-center gap-2" aria-label="Account menu">
+                      <Avatar name={session.user.name} email={session.user.email} />
+                    </button>
+                    <div className="absolute top-full right-0 pt-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
+                      <div className="w-56 bg-white rounded-xl shadow-xl border border-[var(--blush)]/50 py-2">
+                        <div className="px-4 py-2 border-b border-[var(--blush)]/40">
+                          <div className="text-sm font-medium text-[var(--charcoal)] truncate">{session.user.name || 'Your account'}</div>
+                          {session.user.email && <div className="text-xs text-[var(--stone)] truncate">{session.user.email}</div>}
+                        </div>
+                        <Link href="/create" className="block px-4 py-2 text-sm text-[var(--charcoal)] hover:bg-[var(--blush)]/20">Create a gift</Link>
+                        <button
+                          onClick={() => signOut({ callbackUrl: '/' })}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[var(--charcoal)] hover:bg-[var(--blush)]/20"
+                        >
+                          <LogOut className="w-4 h-4" /> Sign out
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link href="/login" className="text-sm font-medium text-[var(--charcoal)] hover:text-[var(--rose)] transition-colors">
+                    Log in
+                  </Link>
+                )}
+                <Link
+                  href="/create"
                   className="bg-[var(--rose)] text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-opacity-90 hover:shadow-lg hover:shadow-[var(--rose)]/20 transition-all"
                 >
-                  Create Bouquet
+                  Start gifting
                 </Link>
               </div>
 
@@ -156,7 +184,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
                   Home
                 </Link>
                 <Link href="/create" onClick={() => setMobileMenuOpen(false)} className="font-heading text-2xl text-[var(--charcoal)]">
-                  Create Bouquet
+                  Start gifting
                 </Link>
                 <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className="font-heading text-2xl text-[var(--charcoal)]">
                   Blog
@@ -201,13 +229,38 @@ export function Header({ variant = 'default' }: HeaderProps) {
                   </div>
                 )}
               </div>
-              <div className="p-8 pb-12 mt-auto">
-                <Link 
-                  href="/create" 
+              <div className="p-8 pb-12 mt-auto space-y-3">
+                {session?.user ? (
+                  <button
+                    onClick={() => { setMobileMenuOpen(false); signOut({ callbackUrl: '/' }); }}
+                    className="flex w-full items-center justify-center gap-2 border border-[var(--blush)] text-[var(--charcoal)] px-6 py-3 rounded-full text-base font-medium hover:bg-[var(--blush)]/30 transition-all"
+                  >
+                    <LogOut className="w-4 h-4" /> Sign out
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex justify-center border border-[var(--blush)] text-[var(--charcoal)] px-6 py-3 rounded-full text-base font-medium hover:bg-[var(--blush)]/30 transition-all"
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/signup"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex justify-center border border-[var(--blush)] text-[var(--charcoal)] px-6 py-3 rounded-full text-base font-medium hover:bg-[var(--blush)]/30 transition-all"
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                )}
+                <Link
+                  href="/create"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex justify-center bg-[var(--rose)] text-white px-6 py-3 rounded-full text-base font-medium hover:bg-opacity-90 shadow-lg transition-all"
                 >
-                  Create Bouquet
+                  Start gifting
                 </Link>
               </div>
             </motion.div>

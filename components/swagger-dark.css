@@ -1,0 +1,151 @@
+/* ───────── Swagger UI — dark theme overrides ───────── */
+:root {
+  --sw-bg: #0f1117;
+  --sw-surface: #171a21;
+  --sw-surface-2: #1f232c;
+  --sw-border: #2a2f3a;
+  --sw-text: #d7dbe3;
+  --sw-muted: #9aa3b2;
+}
+
+.swagger-dark {
+  background: var(--sw-bg);
+  min-height: 100vh;
+}
+
+.swagger-dark .swagger-ui,
+.swagger-dark .swagger-ui .info .title,
+.swagger-dark .swagger-ui .info li,
+.swagger-dark .swagger-ui .info p,
+.swagger-dark .swagger-ui .info table,
+.swagger-dark .swagger-ui label,
+.swagger-dark .swagger-ui .opblock-tag,
+.swagger-dark .swagger-ui .opblock .opblock-section-header h4,
+.swagger-dark .swagger-ui .opblock .opblock-summary-method,
+.swagger-dark .swagger-ui .tab li,
+.swagger-dark .swagger-ui .opblock-description-wrapper p,
+.swagger-dark .swagger-ui .response-col_status,
+.swagger-dark .swagger-ui table thead tr td,
+.swagger-dark .swagger-ui table thead tr th,
+.swagger-dark .swagger-ui .parameter__name,
+.swagger-dark .swagger-ui .parameter__type,
+.swagger-dark .swagger-ui .prop-type,
+.swagger-dark .swagger-ui .model-title,
+.swagger-dark .swagger-ui .model,
+.swagger-dark .swagger-ui section.models h4,
+.swagger-dark .swagger-ui .scheme-container .schemes > label {
+  color: var(--sw-text);
+}
+
+.swagger-dark .swagger-ui .opblock-tag small,
+.swagger-dark .swagger-ui .parameter__in,
+.swagger-dark .swagger-ui .response-col_links,
+.swagger-dark .swagger-ui .info .base-url,
+.swagger-dark .swagger-ui .markdown code,
+.swagger-dark .swagger-ui .renderedMarkdown p {
+  color: var(--sw-muted);
+}
+
+/* Surfaces */
+.swagger-dark .swagger-ui .scheme-container,
+.swagger-dark .swagger-ui section.models,
+.swagger-dark .swagger-ui .opblock .opblock-section-header {
+  background: var(--sw-surface);
+  border-color: var(--sw-border);
+  box-shadow: none;
+}
+
+.swagger-dark .swagger-ui .opblock {
+  background: var(--sw-surface);
+  border-color: var(--sw-border);
+  box-shadow: none;
+}
+
+.swagger-dark .swagger-ui .opblock .opblock-summary {
+  border-color: var(--sw-border);
+}
+
+/* Operation accent tints kept, darker body */
+.swagger-dark .swagger-ui .opblock.opblock-post {
+  background: rgba(73, 204, 144, 0.08);
+}
+.swagger-dark .swagger-ui .opblock.opblock-get {
+  background: rgba(97, 175, 254, 0.08);
+}
+.swagger-dark .swagger-ui .opblock.opblock-delete {
+  background: rgba(249, 62, 62, 0.08);
+}
+
+/* Tables / models */
+.swagger-dark .swagger-ui table tbody tr td {
+  border-color: var(--sw-border);
+  color: var(--sw-text);
+}
+.swagger-dark .swagger-ui .model-box,
+.swagger-dark .swagger-ui section.models .model-container {
+  background: var(--sw-surface-2);
+}
+
+/* Inputs / selects / textareas */
+.swagger-dark .swagger-ui input,
+.swagger-dark .swagger-ui textarea,
+.swagger-dark .swagger-ui select {
+  background: var(--sw-surface-2);
+  border: 1px solid var(--sw-border);
+  color: var(--sw-text);
+}
+.swagger-dark .swagger-ui input::placeholder,
+.swagger-dark .swagger-ui textarea::placeholder {
+  color: var(--sw-muted);
+}
+
+/* Code / examples */
+.swagger-dark .swagger-ui .highlight-code,
+.swagger-dark .swagger-ui .microlight,
+.swagger-dark .swagger-ui .responses-inner pre,
+.swagger-dark .swagger-ui .body-param pre {
+  background: #0b0d12 !important;
+  color: #e3e7ee !important;
+}
+
+/* Dividers & misc */
+.swagger-dark .swagger-ui .opblock-tag {
+  border-color: var(--sw-border);
+}
+.swagger-dark .swagger-ui .tab li.active {
+  color: #fff;
+}
+
+/* Operation summary: path + description must be high-contrast */
+.swagger-dark .swagger-ui .opblock .opblock-summary-path,
+.swagger-dark .swagger-ui .opblock .opblock-summary-path a,
+.swagger-dark .swagger-ui .opblock .opblock-summary-path__deprecated,
+.swagger-dark .swagger-ui .opblock .opblock-summary-path span {
+  color: #f3f5f9;
+  font-weight: 600;
+}
+
+.swagger-dark .swagger-ui .opblock .opblock-summary-description {
+  color: #c4cad4;
+}
+
+/* Section descriptions next to tag names */
+.swagger-dark .swagger-ui .opblock-tag small,
+.swagger-dark .swagger-ui .opblock-tag small p {
+  color: #aeb6c2;
+}
+
+/* Body / response sample text + deep link anchors */
+.swagger-dark .swagger-ui .opblock-summary-path .nostyle,
+.swagger-dark .swagger-ui .opblock-summary-path .nostyle span {
+  color: #f3f5f9;
+}
+
+/* Icons / arrows that are dark by default → lighten */
+.swagger-dark .swagger-ui .opblock-summary-control svg,
+.swagger-dark .swagger-ui .expand-operation svg,
+.swagger-dark .swagger-ui section.models svg,
+.swagger-dark .swagger-ui .model-toggle:after {
+  fill: var(--sw-text);
+  filter: invert(0.85);
+}

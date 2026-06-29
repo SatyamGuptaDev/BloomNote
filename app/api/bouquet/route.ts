@@ -23,6 +23,54 @@ const bouquetSchema = z.object({
   bgImage: z.string().url().max(1000).nullable().optional().or(z.literal(''))
 })
 
+/**
+ * @swagger
+ * /api/bouquet:
+ *   post:
+ *     tags: [Gifts]
+ *     summary: Create a digital bouquet
+ *     description: Saves a bouquet (flowers + note) and returns a shareable slug and URL.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [flowers]
+ *             properties:
+ *               flowers:
+ *                 type: array
+ *                 maxItems: 50
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     type: { type: string, example: rose-red }
+ *                     x: { type: number, example: 50 }
+ *                     y: { type: number, example: 50 }
+ *                     scale: { type: number, example: 1 }
+ *                     rotation: { type: number, example: 45 }
+ *                     zIndex: { type: integer, example: 1 }
+ *               note: { type: string, example: Thinking of you today. }
+ *               fromName: { type: string, example: Mira }
+ *               font: { type: string, example: script }
+ *               textColor: { type: string, example: '#2D2D2D' }
+ *               bgColor: { type: string, example: '#FAF3EC' }
+ *     responses:
+ *       200:
+ *         description: Bouquet created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 slug: { type: string, example: a1b2c3 }
+ *                 url: { type: string, example: http://localhost:3000/b/a1b2c3 }
+ *       400:
+ *         description: Invalid payload
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
+ */
 export async function POST(req: Request) {
   try {
     const body = await req.json()

@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bloomnote.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dearbloomy.com';
 
   const staticRoutes = [
     '',
@@ -57,7 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       take: 10000, // Reasonable limit for sitemap
     });
     
-    bouquetRoutes = bouquets.map((bouquet) => ({
+    bouquetRoutes = bouquets.map((bouquet: { slug: string; createdAt: Date }) => ({
       url: `${baseUrl}/b/${bouquet.slug}`,
       lastModified: bouquet.createdAt,
       changeFrequency: 'never' as const,

@@ -5,7 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { OCCASIONS } from '@/lib/constants';
 
 export const metadata = {
-  title: 'All Occasions | BloomNote',
+  title: 'All Occasions | Dear Bloomy',
   description: 'Find the perfect digital bouquet template for any occasion.',
 };
 
