@@ -16,16 +16,15 @@ export async function GET(
       return NextResponse.json({ error: 'Bouquet not found' }, { status: 404 })
     }
 
-    if (isBouquetExpired(bouquet.expiresAt)) {
-      return NextResponse.json({ error: 'Bouquet has expired' }, { status: 410 })
-    }
-
     await prisma.bouquet.update({
       where: { slug },
       data: { views: { increment: 1 } }
     })
 
-    return NextResponse.json(bouquet)
+    return NextResponse.json({
+      ...bouquet,
+      flowers: JSON.parse(bouquet.flowers as string)
+    })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

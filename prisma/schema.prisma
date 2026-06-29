@@ -3,27 +3,26 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Bouquet {
   id          String   @id @default(cuid())
   slug        String   @unique
-  flowers     Json     // Array of flower objects with position, scale, rotation, zIndex
-  note        String?  @db.Text
+  flowers     String   // SQLite doesn't natively support JSON in older versions of Prisma but Prisma handles it. Let's stick to String and parse it in the API. Wait, Prisma supports Json on SQLite now? Yes, but just to be safe, String is better if it fails. Actually, Prisma *does* support String. Let's use String for flowers and parse it.
+  note        String?
   fromName    String?
   font        String   @default("serif")
   textColor   String   @default("#4a4a4a")
-  music       String?  // "acoustic" | "emotional" | "chill" | null
+  music       String?
   bgColor     String   @default("#fdf6f0")
   bgImage     String?
   views       Int      @default(0)
   createdAt   DateTime @default(now())
-  expiresAt   DateTime @default(dbgenerated("now() + interval '30 days'"))
+  isPublic    Boolean  @default(true)
   
   @@index([slug])
-  @@index([expiresAt])
 }
 
 model BlogPost {
@@ -31,10 +30,10 @@ model BlogPost {
   slug          String   @unique
   title         String
   excerpt       String
-  content       String   @db.Text
+  content       String
   featuredImage String?
   category      String
-  tags          String[]
+  tags          String   // Stored as JSON string
   publishedAt   DateTime @default(now())
   updatedAt     DateTime @updatedAt
   views         Int      @default(0)
@@ -47,7 +46,7 @@ model BlogPost {
 model Template {
   id          String  @id @default(cuid())
   occasion    String
-  flowers     Json
+  flowers     String  // Stored as JSON string
   note        String
   fromName    String?
   font        String  @default("serif")

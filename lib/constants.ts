@@ -18,11 +18,11 @@ export const FONT_OPTIONS = [
 ]
 
 export const OCCASIONS = [
-  { slug: "mothers-day", name: "Mother's Day", description: "Show mom some love" },
-  { slug: "birthday", name: "Birthday", description: "Celebrate a special day" },
-  { slug: "anniversary", name: "Anniversary", description: "Celebrate your love" },
-  { slug: "apology", name: "Apology", description: "Say you are sorry" },
-  { slug: "just-because", name: "Just Because", description: "No reason needed" },
+  { slug: "mothers-day", name: "Mother's Day", description: "Show mom some love", image: "https://images.unsplash.com/photo-1520849649551-789aee4e36cb?q=80&w=800&auto=format&fit=crop" },
+  { slug: "birthday", name: "Birthday", description: "Celebrate a special day", image: "https://images.unsplash.com/photo-1530103862676-de3c9de59f9e?q=80&w=800&auto=format&fit=crop" },
+  { slug: "anniversary", name: "Anniversary", description: "Celebrate your love", image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=800&auto=format&fit=crop" },
+  { slug: "apology", name: "Apology", description: "Say you are sorry", image: "https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?q=80&w=800&auto=format&fit=crop" },
+  { slug: "just-because", name: "Just Because", description: "No reason needed", image: "https://images.unsplash.com/photo-1490750967868-88cb4eca20db?q=80&w=800&auto=format&fit=crop" },
 ]
 
 export const MESSAGE_TEMPLATES = {

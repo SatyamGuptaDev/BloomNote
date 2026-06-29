@@ -13,14 +13,14 @@ const flowerConfigSchema = z.object({
 })
 
 const bouquetSchema = z.object({
-  flowers: z.array(flowerConfigSchema),
-  note: z.string().nullable().optional(),
-  fromName: z.string().nullable().optional(),
-  font: z.string().optional(),
-  textColor: z.string().optional(),
-  music: z.string().nullable().optional(),
-  bgColor: z.string().optional(),
-  bgImage: z.string().nullable().optional()
+  flowers: z.array(flowerConfigSchema).max(50),
+  note: z.string().max(2000).nullable().optional(),
+  fromName: z.string().max(100).nullable().optional(),
+  font: z.string().max(50).optional(),
+  textColor: z.string().max(30).optional(),
+  music: z.string().max(100).nullable().optional(),
+  bgColor: z.string().max(30).optional(),
+  bgImage: z.string().url().max(1000).nullable().optional().or(z.literal(''))
 })
 
 export async function POST(req: Request) {
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const bouquet = await prisma.bouquet.create({
       data: {
         slug,
-        flowers: parsed.flowers as any,
+        flowers: JSON.stringify(parsed.flowers),
         note: parsed.note,
         fromName: parsed.fromName,
         font: parsed.font || 'serif',

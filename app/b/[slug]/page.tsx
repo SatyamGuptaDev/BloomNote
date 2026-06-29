@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BouquetViewer } from './BouquetViewer';
 
@@ -16,6 +17,46 @@ async function getBouquet(slug: string) {
     console.error("Failed to fetch bouquet", e);
     return null;
   }
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const bouquet = await getBouquet(params.slug);
+  
+  if (!bouquet || bouquet === 'expired') {
+    return {
+      title: 'Bouquet Not Found | BloomNote',
+      description: 'This bouquet does not exist or has expired.',
+    };
+  }
+
+  const title = bouquet.fromName ? `A bouquet for you from ${bouquet.fromName}` : 'Someone sent you a digital bouquet';
+  const description = bouquet.note ? `"${bouquet.note.substring(0, 100)}${bouquet.note.length > 100 ? '...' : ''}" - Click to open your bouquet.` : 'Open your digital bouquet to reveal the flowers and message inside.';
+  
+  return {
+    title: `${title} | BloomNote`,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/b/${params.slug}`,
+      siteName: 'BloomNote',
+      images: [
+        {
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/api/og?title=${encodeURIComponent(title)}`,
+          width: 1200,
+          height: 630,
+          alt: 'A digital bouquet',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [`${process.env.NEXT_PUBLIC_APP_URL}/api/og?title=${encodeURIComponent(title)}`],
+    },
+  };
 }
 
 export default async function ViewBouquetPage({ params }: { params: { slug: string } }) {

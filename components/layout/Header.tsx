@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,18 @@ interface HeaderProps {
 
 export function Header({ variant = 'default' }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [recentBouquets, setRecentBouquets] = useState<{slug: string, fromName: string | null, note: string | null, date: string}[]>([]);
+
+  useEffect(() => {
+    try {
+      const recentStr = localStorage.getItem('recent_bouquets');
+      if (recentStr) {
+        setRecentBouquets(JSON.parse(recentStr));
+      }
+    } catch (error) {
+      console.error('Error loading recent bouquets', error);
+    }
+  }, []);
 
   const Logo = () => (
     <Link href="/" className="flex items-center gap-2">
@@ -66,6 +78,27 @@ export function Header({ variant = 'default' }: HeaderProps) {
                     </div>
                   </div>
                 </div>
+                {recentBouquets.length > 0 && (
+                  <div className="relative group">
+                    <span className="text-[var(--stone)] hover:text-[var(--rose)] transition-colors duration-200 cursor-pointer">
+                      Recent
+                    </span>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200">
+                      <div className="bg-white rounded-xl shadow-xl border border-[var(--blush)]/50 py-2 w-64 flex flex-col max-h-80 overflow-y-auto">
+                        {recentBouquets.map((b) => (
+                          <Link 
+                            key={b.slug} 
+                            href={`/b/${b.slug}`}
+                            className="px-4 py-3 text-sm text-[var(--charcoal)] border-b border-[var(--blush)]/30 hover:bg-[var(--blush)]/20 transition-colors last:border-0"
+                          >
+                            <div className="font-medium truncate">{b.fromName ? `From ${b.fromName}` : 'Anonymous'}</div>
+                            {b.note && <div className="text-xs text-[var(--stone)] truncate mt-1">"{b.note}"</div>}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </nav>
 
               {/* Desktop CTA */}
@@ -118,7 +151,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              <div className="flex-1 flex flex-col gap-6 p-8">
+              <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto">
                 <Link href="/" onClick={() => setMobileMenuOpen(false)} className="font-heading text-2xl text-[var(--charcoal)]">
                   Home
                 </Link>
@@ -128,6 +161,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
                 <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className="font-heading text-2xl text-[var(--charcoal)]">
                   Blog
                 </Link>
+                
                 <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-[var(--blush)]/50">
                   <span className="text-sm text-[var(--stone)] uppercase tracking-wider font-semibold">Occasions</span>
                   {[
@@ -147,8 +181,27 @@ export function Header({ variant = 'default' }: HeaderProps) {
                     </Link>
                   ))}
                 </div>
+
+                {recentBouquets.length > 0 && (
+                  <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-[var(--blush)]/50">
+                    <span className="text-sm text-[var(--stone)] uppercase tracking-wider font-semibold">Recent Bouquets</span>
+                    {recentBouquets.map((b) => (
+                      <Link 
+                        key={b.slug} 
+                        href={`/b/${b.slug}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex flex-col py-2"
+                      >
+                        <span className="font-heading text-lg text-[var(--charcoal)] hover:text-[var(--rose)]">
+                          {b.fromName ? `From ${b.fromName}` : 'Anonymous'}
+                        </span>
+                        {b.note && <span className="text-sm text-[var(--stone)] truncate">"{b.note}"</span>}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="p-8 pb-12">
+              <div className="p-8 pb-12 mt-auto">
                 <Link 
                   href="/create" 
                   onClick={() => setMobileMenuOpen(false)}

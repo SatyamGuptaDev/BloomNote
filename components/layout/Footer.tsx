@@ -17,12 +17,12 @@ export function Footer() {
             </Link>
             <p className="text-[var(--stone)] text-sm">Made for meaningful moments.</p>
             <div className="flex items-center gap-4">
-              <Link href="#" className="text-[var(--stone)] hover:text-[var(--rose)] transition-colors" aria-label="Instagram">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-[var(--stone)] hover:text-[var(--rose)] transition-colors" aria-label="Instagram">
                 <Instagram className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="text-[var(--stone)] hover:text-[var(--rose)] transition-colors" aria-label="Twitter">
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-[var(--stone)] hover:text-[var(--rose)] transition-colors" aria-label="Twitter">
                 <Twitter className="w-5 h-5" />
-              </Link>
+              </a>
             </div>
             
             <div className="mt-4 flex flex-col gap-2">
@@ -68,9 +68,9 @@ export function Footer() {
           {/* Legal Links */}
           <div className="flex flex-col gap-4">
             <h4 className="font-heading text-lg text-[var(--charcoal)] font-medium">Legal</h4>
-            <Link href="#" className="text-[var(--stone)] text-sm hover:text-[var(--rose)] transition-colors">Privacy Policy</Link>
-            <Link href="#" className="text-[var(--stone)] text-sm hover:text-[var(--rose)] transition-colors">Terms of Service</Link>
-            <Link href="#" className="text-[var(--stone)] text-sm hover:text-[var(--rose)] transition-colors">Contact</Link>
+            <Link href="/privacy" className="text-[var(--stone)] text-sm hover:text-[var(--rose)] transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="text-[var(--stone)] text-sm hover:text-[var(--rose)] transition-colors">Terms of Service</Link>
+            <Link href="/contact" className="text-[var(--stone)] text-sm hover:text-[var(--rose)] transition-colors">Contact</Link>
           </div>
         </div>
 

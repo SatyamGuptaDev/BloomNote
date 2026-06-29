@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { Suspense, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Canvas, CanvasFlower } from '@/components/bouquet/Canvas';
 import { FlowerSVG } from '@/components/bouquet/FlowerSVG';
@@ -13,8 +13,9 @@ import { Trash2, ChevronLeft, ChevronRight, Check, Copy, Share2, Mail, Sparkles,
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function CreateBouquet() {
+function CreateBouquetInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   // State
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -30,9 +31,77 @@ export default function CreateBouquet() {
   const [slug, setSlug] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Handle Templates from query params
+  useEffect(() => {
+    const templateId = searchParams.get('template');
+    const from = searchParams.get('from');
+    
+    if (from === 'draft') {
+      try {
+        const draftStr = localStorage.getItem('draft_bouquet');
+        if (draftStr) {
+          const draft = JSON.parse(draftStr);
+          if (draft.flowers) setFlowers(draft.flowers);
+          if (draft.note) setNote(draft.note);
+          if (draft.fromName) setFromName(draft.fromName);
+          if (draft.font) setFont(draft.font);
+          if (draft.textColor) setTextColor(draft.textColor);
+          if (draft.bgColor) setBgColor(draft.bgColor);
+        }
+      } catch (error) {
+        console.error('Error loading draft', error);
+      }
+    } else if (templateId) {
+      const predefinedTemplates = {
+        '1': ['rose-red', 'rose-pink', 'greenery'],
+        '2': ['sunflower', 'daisy', 'tulip-yellow'],
+        '3': ['lily', 'tulip-purple', 'rose-white'],
+      };
+      const types = predefinedTemplates[templateId as keyof typeof predefinedTemplates];
+      if (types) {
+        const generated = types.map((type, i) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          type,
+          x: 20 + Math.random() * 60,
+          y: 20 + Math.random() * 60,
+          scale: 0.8 + Math.random() * 0.4,
+          rotation: Math.random() * 360,
+          zIndex: i + 1
+        }));
+        setFlowers(generated);
+      }
+    }
+  }, [searchParams]);
 
   // Canvas Actions
+  const handleFlowerSelect = useCallback((id: string | null) => {
+    setSelectedId(id);
+    if (id) {
+      setFlowers(prev => {
+        const maxZ = Math.max(0, ...prev.map(f => f.zIndex));
+        return prev.map(f => f.id === id ? { ...f, zIndex: maxZ + 1 } : f);
+      });
+    }
+  }, []);
+
   const handleAddFlower = (type: string) => {
+    const maxZ = Math.max(0, ...flowers.map(f => f.zIndex));
     const newFlower: CanvasFlower = {
       id: Math.random().toString(36).substr(2, 9),
       type,
@@ -40,10 +109,33 @@ export default function CreateBouquet() {
       y: 50 + (Math.random() * 10 - 5),
       scale: 1,
       rotation: Math.random() * 360,
-      zIndex: flowers.length + 1
+      zIndex: maxZ + 1
     };
     setFlowers([...flowers, newFlower]);
     setSelectedId(newFlower.id);
+  };
+
+  const handleAutoGenerate = () => {
+    const templates = [
+      { types: ['rose-red', 'rose-pink', 'greenery', 'rose-red', 'rose-white'], note: 'A classic romantic arrangement just for you. ❤️' },
+      { types: ['sunflower', 'daisy', 'daisy', 'greenery', 'tulip-yellow'], note: 'Sending some sunshine and smiles your way! ☀️' },
+      { types: ['lily', 'tulip-purple', 'tulip-purple', 'rose-white', 'greenery'], note: 'Thinking of you with these elegant pastels.' }
+    ];
+    const template = templates[Math.floor(Math.random() * templates.length)];
+    
+    const generated = template.types.map((type, i) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      x: 20 + Math.random() * 60,
+      y: 20 + Math.random() * 60,
+      scale: 0.8 + Math.random() * 0.4,
+      rotation: Math.random() * 360,
+      zIndex: i + 1
+    }));
+    
+    setFlowers(generated);
+    setNote(template.note);
+    setSelectedId(null);
   };
 
   const handleFlowerMove = useCallback((id: string, x: number, y: number) => {
@@ -131,6 +223,11 @@ export default function CreateBouquet() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--cream)]/30">
+      {!isOnline && (
+        <div className="bg-red-500 text-white text-center py-2 text-sm font-medium z-50 animate-pulse sticky top-0">
+          You are offline. Reconnect to save your bouquet.
+        </div>
+      )}
       <Header variant="minimal" />
       
       {/* Progress Bar */}
@@ -183,6 +280,14 @@ export default function CreateBouquet() {
               <div className="w-px h-6 bg-gray-200" />
               
               <div className="flex items-center gap-4">
+                <button
+                  onClick={handleAutoGenerate}
+                  className="text-xs text-[var(--stone)] hover:text-[var(--rose)] flex items-center gap-1 transition-colors whitespace-nowrap font-medium"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span className="hidden sm:inline">Auto Generate</span>
+                </button>
+
                 <span className="text-sm font-medium text-[var(--charcoal)] whitespace-nowrap">🌸 {flowers.length}</span>
                 <button 
                   onClick={clearCanvas}
@@ -190,7 +295,7 @@ export default function CreateBouquet() {
                   disabled={flowers.length === 0}
                 >
                   <Trash2 className="w-3 h-3" />
-                  <span className="hidden sm:inline">Clear all</span>
+                  <span className="hidden sm:inline">Clear</span>
                 </button>
               </div>
             </div>
@@ -202,7 +307,7 @@ export default function CreateBouquet() {
                   flowers={flowers}
                   backgroundColor={bgColor}
                   onFlowerMove={handleFlowerMove}
-                  onFlowerSelect={setSelectedId}
+                  onFlowerSelect={handleFlowerSelect}
                   onFlowerDelete={handleFlowerDelete}
                   onFlowerUpdate={handleFlowerUpdate}
                   selectedId={selectedId}
@@ -474,5 +579,13 @@ export default function CreateBouquet() {
         type="success"
       />
     </div>
+  );
+}
+
+export default function CreateBouquet() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><div className="w-8 h-8 border-4 border-[var(--rose)] border-t-transparent rounded-full animate-spin"></div></div>}>
+      <CreateBouquetInner />
+    </Suspense>
   );
 }

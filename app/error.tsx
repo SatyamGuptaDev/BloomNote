@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Error({
   error,
@@ -10,22 +11,28 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    console.error('Application error:', error.message);
   }, [error]);
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-[var(--blush)]">
-      <div className="text-center space-y-6">
-        <h2 className="text-3xl text-[var(--charcoal)]">Something went wrong</h2>
-        <p className="text-[var(--stone)] max-w-md mx-auto">
-          We are sorry, but an unexpected error occurred. Please try again.
-        </p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--cream)] px-4 text-center">
+      <h2 className="font-heading text-4xl text-[var(--charcoal)] mb-4">Oops! Something went wrong!</h2>
+      <p className="text-[var(--stone)] mb-8 max-w-md">
+        We encountered an unexpected error. Please try again or head back home.
+      </p>
+      <div className="flex gap-4">
         <button
           onClick={() => reset()}
-          className="bg-[var(--rose)] text-white px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors"
+          className="bg-[var(--rose)] text-white px-6 py-3 rounded-full hover:bg-[var(--rose)]/90 transition-colors"
         >
           Try again
         </button>
+        <Link
+          href="/"
+          className="bg-white text-[var(--charcoal)] px-6 py-3 rounded-full border border-[var(--blush)] hover:bg-[var(--blush)]/20 transition-colors"
+        >
+          Go back home
+        </Link>
       </div>
     </div>
   );

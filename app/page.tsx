@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { BouquetGallery } from '@/components/bouquet/BouquetGallery';
 import { ChevronLeft, ChevronRight, Flower2, PenTool, Share2, Heart, Cake, Sparkles, MessageCircle, Sun, Star } from 'lucide-react';
 
 export default function Home() {
@@ -127,6 +129,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Bouquet Gallery */}
+        <BouquetGallery />
+
         {/* Section 4: Occasion Grid */}
         <section className="py-24 bg-white">
           <h2 className="font-heading text-4xl text-center text-[var(--charcoal)] mb-4 px-4">Thoughtful Gifts Made Easy</h2>
@@ -166,13 +171,13 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { title: "5 Things to Write in a Just Because Card", excerpt: "Stuck on what to say? Here are thoughtful prompts to make them smile without a specific reason.", cat: "Guides" },
-                { title: "The Meaning Behind Different Rose Colors", excerpt: "Did you know yellow means friendship while white signifies new beginnings? A quick guide to floral symbolism.", cat: "Floral Guide" },
-                { title: "How to Make a Long-Distance Birthday Special", excerpt: "Distance doesn't mean you can't celebrate. Tips for making them feel loved from afar.", cat: "Relationships" }
+                { title: "5 Things to Write in a Just Because Card", excerpt: "Stuck on what to say? Here are thoughtful prompts to make them smile without a specific reason.", cat: "Guides", slug: "5-things-to-write-just-because", image: "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=800&auto=format&fit=crop" },
+                { title: "The Meaning Behind Different Rose Colors", excerpt: "Did you know yellow means friendship while white signifies new beginnings? A quick guide to floral symbolism.", cat: "Floral Guide", slug: "meaning-behind-rose-colors", image: "https://images.unsplash.com/photo-1496062031456-07b8f162a322?q=80&w=800&auto=format&fit=crop" },
+                { title: "Why Digital Gifting is the New Norm", excerpt: "It's instantaneous, zero-waste, and highly personal. The rise of virtual gifts.", cat: "Trends", slug: "digital-gifting-trend", image: "https://images.unsplash.com/photo-1507290439931-a861b5a38200?q=80&w=800&auto=format&fit=crop" }
               ].map((post, i) => (
-                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow border border-[var(--blush)]/30 flex flex-col">
-                  <div className="h-48 bg-[var(--blush)]/30 relative">
-                     {/* Placeholder image */}
+                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow border border-[var(--blush)]/30 flex flex-col group">
+                  <div className="h-48 bg-[var(--blush)]/30 relative overflow-hidden flex items-center justify-center">
+                    <Image src={post.image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
                   </div>
                   <div className="p-6 flex-1 flex flex-col">
                     <span className="inline-block bg-[var(--rose)]/10 text-[var(--rose)] text-xs font-semibold px-3 py-1 rounded-full w-fit mb-4">
@@ -180,7 +185,7 @@ export default function Home() {
                     </span>
                     <h3 className="font-heading text-xl text-[var(--charcoal)] mb-3">{post.title}</h3>
                     <p className="text-[var(--stone)] text-sm line-clamp-2 mb-6 flex-1">{post.excerpt}</p>
-                    <Link href={`/blog/post-${i}`} className="text-[var(--rose)] font-medium hover:underline flex items-center gap-1 mt-auto">
+                    <Link href={`/blog/${post.slug}`} className="text-[var(--rose)] font-medium hover:underline flex items-center gap-1 mt-auto">
                       Read article <ChevronRight className="w-4 h-4" />
                     </Link>
                   </div>

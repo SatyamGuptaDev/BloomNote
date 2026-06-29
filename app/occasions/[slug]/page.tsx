@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { BackButton } from '@/components/shared/BackButton';
 import { notFound } from 'next/navigation';
 import { OCCASIONS, MESSAGE_TEMPLATES } from '@/lib/constants';
 import { FlowerSVG } from '@/components/bouquet/FlowerSVG';
@@ -44,8 +45,11 @@ export default function OccasionPage({ params }: { params: { slug: string } }) {
       <main className="flex-1 pt-16">
         
         {/* Hero */}
-        <section className="bg-gradient-to-b from-[var(--blush)]/50 to-white py-20 px-4 text-center">
-          <div className="max-w-3xl mx-auto">
+        <section className="bg-gradient-to-b from-[var(--blush)]/50 to-white py-12 px-4 text-center">
+          <div className="max-w-3xl mx-auto flex flex-col items-center">
+            <div className="self-start mb-6">
+              <BackButton label="Back to Occasions" />
+            </div>
             <h1 className="font-heading text-4xl sm:text-5xl text-[var(--charcoal)] mb-6 capitalize">
               {occasion.name} Digital Bouquets
             </h1>
