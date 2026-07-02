@@ -1,0 +1,940 @@
+'use client';
+
+import { Suspense, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Header } from '@/components/layout/Header';
+import { Canvas, CanvasFlower } from '@/components/bouquet/Canvas';
+import { FlowerSVG } from '@/components/bouquet/FlowerSVG';
+import { NoteCard } from '@/components/bouquet/NoteCard';
+import { Toast } from '@/components/shared/Toast';
+import { FONT_OPTIONS, FLOWER_TYPES, OCCASIONS } from '@/lib/constants';
+import { getFlowersByOccasion, getTemplatesByOccasion, getThemeById, applyTheme } from '@/lib/bouquet-helpers';
+import { Trash2, ChevronLeft, ChevronRight, Check, Copy, Mail, Sparkles, MessageCircle, Eye, Wand2, RotateCcw, RotateCw, ZoomIn, ZoomOut, Undo2, Loader2, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const FLOWER_CATEGORIES: Record<string, string[]> = {
+  'Roses': ['rose-red', 'rose-pink', 'rose-white'],
+  'Tulips': ['tulip-yellow', 'tulip-purple'],
+  'Lilies': ['lily'],
+  'Wild': ['sunflower', 'daisy', 'marigold', 'poppy'],
+  'Soft': ['peony', 'carnation', 'cherry-blossom', 'hydrangea'],
+  'Exotic': ['orchid', 'iris', 'protea'],
+  'Fillers': ['greenery', 'lavender', 'baby-breath', 'leaf-stem']
+};
+
+function CreateBouquetInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // State
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [flowers, setFlowers] = useState<CanvasFlower[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const [note, setNote] = useState('');
+  const [fromName, setFromName] = useState('');
+  const [font, setFont] = useState('serif');
+  const [textColor, setTextColor] = useState('#2D2D2D');
+  const [bgColor, setBgColor] = useState('#FAF3EC');
+
+  const [slug, setSlug] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [isOnline, setIsOnline] = useState(true);
+
+  // Expanded State
+  const [occasion, setOccasion] = useState<string>('just-because');
+  const [recipientName, setRecipientName] = useState<string>('');
+  const [wrapStyle, setWrapStyle] = useState<string>('none');
+  const [ribbonColor, setRibbonColor] = useState<string | null>(null);
+  const [noteCardStyle, setNoteCardStyle] = useState<string>('classic');
+  const [themeName, setThemeName] = useState<string | null>(null);
+
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [selectedTone, setSelectedTone] = useState<string>('warm');
+
+  const [draftSaved, setDraftSaved] = useState<boolean>(false);
+  const [showDraftBanner, setShowDraftBanner] = useState<boolean>(false);
+  const [undoStack, setUndoStack] = useState<CanvasFlower[][]>([[]]);
+  const [filteredCategory, setFilteredCategory] = useState<string>('All');
+  const [filteredOccasionFlowers, setFilteredOccasionFlowers] = useState<boolean>(false);
+  const [visibleTemplateCount, setVisibleTemplateCount] = useState<number>(4);
+
+  const flowersRef = useRef(flowers);
+  useEffect(() => { flowersRef.current = flowers; }, [flowers]);
+
+  const pushToUndo = useCallback((prevFlowers: CanvasFlower[]) => {
+    setUndoStack((prev) => {
+      const newStack = [...prev, prevFlowers];
+      if (newStack.length > 20) return newStack.slice(newStack.length - 20);
+      return newStack;
+    });
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    setUndoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const stackCopy = [...prev];
+      const popped = stackCopy.pop();
+      if (popped) setFlowers(popped);
+      return stackCopy;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo]);
+
+  const applyThemeById = useCallback((themeId: string) => {
+    const theme = getThemeById(themeId);
+    if (!theme) return;
+    const result = applyTheme(theme);
+    setBgColor(result.bgColor);
+    setWrapStyle(result.wrapStyle);
+    setRibbonColor(result.ribbonColor);
+    setFont(result.fontId);
+    setTextColor(result.textColor);
+    setNoteCardStyle(result.noteCardStyle);
+    setThemeName(theme.name);
+
+    if (result.suggestedFlowers.length > 0 && flowersRef.current.length === 0) {
+      pushToUndo(flowersRef.current);
+      const generated = result.suggestedFlowers.map((type, i) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        type,
+        x: 20 + Math.random() * 60,
+        y: 20 + Math.random() * 60,
+        scale: 0.8 + Math.random() * 0.4,
+        rotation: Math.random() * 360,
+        zIndex: i + 1,
+      }));
+      setFlowers(generated);
+    }
+  }, [pushToUndo]);
+
+  const validateStep = (s: number): { valid: boolean; message: string } => {
+    if (s === 1 && flowers.length < 1) return { valid: false, message: 'Add at least one flower.' };
+    if (s === 2 && fromName.length > 100) return { valid: false, message: 'Name is too long.' };
+    return { valid: true, message: '' };
+  };
+
+  const goToStep = (next: number) => {
+    const check = validateStep(step);
+    if (!check.valid && next > step) {
+      setStepError(check.message);
+      return;
+    }
+    setStepError(null);
+    setStep(next as 1 | 2 | 3);
+  };
+
+  // Draft Auto-save
+  const draftRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (step === 3) return;
+    if (flowers.length === 0 && note === '') return;
+    if (draftRef.current) clearTimeout(draftRef.current);
+    draftRef.current = setTimeout(() => {
+      try {
+        const payload = { flowers, note, fromName, font, textColor, bgColor, wrapStyle, ribbonColor, occasion, recipientName, noteCardStyle, themeName };
+        localStorage.setItem('draft_bouquet', JSON.stringify(payload));
+        setDraftSaved(true);
+        setTimeout(() => setDraftSaved(false), 2000);
+      } catch (err) { }
+    }, 1500);
+    return () => { if (draftRef.current) clearTimeout(draftRef.current); };
+  }, [flowers, note, fromName, font, textColor, bgColor, wrapStyle, ribbonColor, occasion, recipientName, noteCardStyle, themeName, step]);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // On Mount load check
+  useEffect(() => {
+    try {
+      const draftStr = localStorage.getItem('draft_bouquet');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        if (draft.flowers && draft.flowers.length > 0) {
+          setShowDraftBanner(true);
+        }
+      }
+    } catch (e) { }
+  }, []);
+
+  const restoreDraft = () => {
+    try {
+      const draftStr = localStorage.getItem('draft_bouquet');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        if (draft.flowers) setFlowers(draft.flowers);
+        if (draft.note) setNote(draft.note);
+        if (draft.fromName) setFromName(draft.fromName);
+        if (draft.font) setFont(draft.font);
+        if (draft.textColor) setTextColor(draft.textColor);
+        if (draft.bgColor) setBgColor(draft.bgColor);
+        if (draft.wrapStyle) setWrapStyle(draft.wrapStyle);
+        if (draft.ribbonColor) setRibbonColor(draft.ribbonColor);
+        if (draft.occasion) setOccasion(draft.occasion);
+        if (draft.recipientName) setRecipientName(draft.recipientName);
+        if (draft.noteCardStyle) setNoteCardStyle(draft.noteCardStyle);
+        if (draft.themeName) setThemeName(draft.themeName);
+      }
+      setShowDraftBanner(false);
+    } catch (e) { }
+  };
+
+  const dismissDraft = () => {
+    try { localStorage.removeItem('draft_bouquet'); } catch (e) { }
+    setShowDraftBanner(false);
+  };
+
+  // Canvas Actions
+  const visibleFlowers = useMemo(() => {
+    let list = FLOWER_TYPES;
+    if (filteredOccasionFlowers && occasion !== 'just-because') {
+      list = getFlowersByOccasion(occasion);
+    }
+    if (filteredCategory !== 'All') {
+      list = list.filter(f => f.category === filteredCategory);
+    }
+    return list;
+  }, [filteredCategory, filteredOccasionFlowers, occasion]);
+
+  const handleFlowerSelect = useCallback((id: string | null) => {
+    setSelectedId(id);
+    if (id) {
+      setFlowers((prev) => {
+        const maxZ = Math.max(0, ...prev.map((f) => f.zIndex));
+        return prev.map((f) => (f.id === id ? { ...f, zIndex: maxZ + 1 } : f));
+      });
+    }
+  }, []);
+
+  const handleAddFlower = (type: string) => {
+    pushToUndo(flowersRef.current);
+    const maxZ = Math.max(0, ...flowersRef.current.map((f) => f.zIndex));
+    const newFlower: CanvasFlower = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      x: 50 + (Math.random() * 10 - 5),
+      y: 50 + (Math.random() * 10 - 5),
+      scale: 1,
+      rotation: Math.random() * 360,
+      zIndex: maxZ + 1,
+    };
+    setFlowers([...flowersRef.current, newFlower]);
+    setSelectedId(newFlower.id);
+  };
+
+  const handleAutoGenerate = () => {
+    pushToUndo(flowersRef.current);
+    const templates = [
+      { types: ['rose-red', 'rose-pink', 'greenery', 'rose-red', 'rose-white'], note: 'A classic romantic arrangement just for you. ❤️' },
+      { types: ['sunflower', 'daisy', 'daisy', 'greenery', 'tulip-yellow'], note: 'Sending some sunshine and smiles your way! ☀️' },
+      { types: ['lily', 'tulip-purple', 'tulip-purple', 'rose-white', 'greenery'], note: 'Thinking of you with these elegant pastels.' },
+    ];
+    const template = templates[Math.floor(Math.random() * templates.length)];
+    const generated = template.types.map((type, i) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      x: 20 + Math.random() * 60,
+      y: 20 + Math.random() * 60,
+      scale: 0.8 + Math.random() * 0.4,
+      rotation: Math.random() * 360,
+      zIndex: i + 1,
+    }));
+    setFlowers(generated);
+    setNote(template.note);
+    setSelectedId(null);
+  };
+
+  const handleFlowerMove = useCallback((id: string, x: number, y: number) => {
+    pushToUndo(flowersRef.current);
+    setFlowers((prev) => prev.map((f) => (f.id === id ? { ...f, x, y } : f)));
+  }, [pushToUndo]);
+
+  const handleFlowerUpdate = useCallback((id: string, updates: Partial<CanvasFlower>) => {
+    pushToUndo(flowersRef.current);
+    setFlowers((prev) => prev.map((f) => (f.id === id ? { ...f, ...updates } : f)));
+  }, [pushToUndo]);
+
+  const handleFlowerDelete = useCallback((id: string) => {
+    pushToUndo(flowersRef.current);
+    setFlowers((prev) => prev.filter((f) => f.id !== id));
+    setSelectedId(null);
+  }, [pushToUndo]);
+
+  const clearCanvas = () => {
+    pushToUndo(flowersRef.current);
+    setFlowers([]);
+    setSelectedId(null);
+  };
+
+  const generateAINote = async (action: 'generate' | 'shorten' | 'warmer' = 'generate') => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await fetch('/api/ai-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          occasion,
+          tone: selectedTone,
+          fromName: fromName || undefined,
+          toName: recipientName || undefined,
+          existingNote: action !== 'generate' ? note : undefined,
+          action
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setAiError(err.error || 'Generation failed. Try again.');
+        return;
+      }
+      const data = await res.json();
+      setNote(data.note);
+    } catch {
+      setAiError('Network error. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setVisibleTemplateCount(4);
+  }, [occasion]);
+
+  const activeTemplates = getTemplatesByOccasion(occasion);
+
+  // Submit
+  const handleCreate = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/bouquet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowers: flowers.map((f) => ({ type: f.type, x: f.x, y: f.y, scale: f.scale, rotation: f.rotation, zIndex: f.zIndex })),
+          note,
+          fromName,
+          font,
+          textColor,
+          bgColor,
+          wrapStyle,
+          ribbonColor,
+          occasion,
+          recipientName,
+          noteCardStyle,
+          themeName
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSlug(data.slug);
+        goToStep(3);
+        try { localStorage.removeItem('draft_bouquet'); } catch(e) {}
+      } else {
+        throw new Error(data.error || 'Failed to create bouquet');
+      }
+    } catch (error) {
+      console.error(error);
+      setToastMessage('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const shareUrl = slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/b/${slug}` : '';
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setToastMessage('Link copied to clipboard!');
+  };
+
+  const colors = [
+    { name: 'White', value: '#FFFFFF' },
+    { name: 'Blush', value: '#F7E7E4' },
+    { name: 'Cream', value: '#FAF3EC' },
+    { name: 'Sage', value: '#e2ece0' },
+    { name: 'Lavender', value: '#E7E3F2' },
+    { name: 'Pink', value: '#fde8ef' },
+  ];
+
+  const textColors = [
+    { name: 'Charcoal', value: '#2B2522' },
+    { name: 'Rose', value: '#C16E7E' },
+    { name: 'Sage', value: '#799173' },
+    { name: 'Purple', value: '#8b8bb3' },
+    { name: 'Stone', value: '#897F7A' },
+    { name: 'White', value: '#FFFFFF' },
+  ];
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-[var(--background)] to-[var(--blush)]/25">
+      {!isOnline && (
+        <div className="sticky top-0 z-50 animate-pulse bg-red-500 py-2 text-center text-sm font-medium text-white">
+          You are offline. Reconnect to save your bouquet.
+        </div>
+      )}
+      <Header variant="minimal" />
+      <AnimatePresence>
+        {showDraftBanner && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-[var(--rose)]/10 px-4 py-3 text-sm text-[var(--charcoal)] flex justify-center items-center gap-4">
+            <span>You have an unsaved draft.</span>
+            <div className="flex gap-2">
+              <button onClick={restoreDraft} className="font-semibold text-[var(--rose-deep)] underline">Restore</button>
+              <button onClick={dismissDraft} className="font-semibold text-[var(--stone)] underline">Dismiss</button>
+            </div>
+          </motion.div>
+        )}
+        {stepError && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-red-50 px-4 py-2 text-red-600 text-sm text-center border-b border-red-100 flex justify-center items-center gap-2">
+            <AlertCircle className="h-4 w-4" /> {stepError}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stepper */}
+      <div className="relative z-10 w-full border-b border-[var(--blush)] bg-white/80 pt-16 backdrop-blur-sm">
+        <div className="mx-auto max-w-md px-6 py-5">
+          <div className="relative flex items-start justify-between">
+            <div className="absolute left-5 right-5 top-5 h-[3px] -translate-y-1/2 rounded-full bg-[var(--blush)]" />
+            <motion.div
+              className="absolute left-5 top-5 h-[3px] -translate-y-1/2 rounded-full bg-[var(--rose)]"
+              initial={false}
+              animate={{ width: `calc(${((step - 1) / 2) * 100}% - ${((step - 1) / 2) * 40}px)` }}
+              transition={{ duration: 0.4, ease: 'easeInOut' }}
+            />
+            {[
+              { n: 1, label: 'Arrange' },
+              { n: 2, label: 'Write note' },
+              { n: 3, label: 'Share' },
+            ].map((s) => {
+              const done = step > s.n;
+              const current = step === s.n;
+              return (
+                <div key={s.n} className="relative z-10 flex flex-col items-center gap-2">
+                  <motion.div
+                    animate={{ scale: current ? 1.1 : 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                    className={cn(
+                      'grid h-10 w-10 place-items-center rounded-full text-sm font-semibold transition-colors duration-300',
+                      done && 'bg-[var(--rose)] text-white',
+                      current && 'bg-[var(--rose)] text-white ring-4 ring-[var(--rose)]/20',
+                      !done && !current && 'border-2 border-[var(--blush)] bg-white text-[var(--stone)]'
+                    )}
+                  >
+                    {done ? <Check className="h-5 w-5" /> : s.n}
+                  </motion.div>
+                  <span className={cn('text-xs font-medium transition-colors', current || done ? 'text-[var(--charcoal)]' : 'text-[var(--stone)]')}>
+                    {s.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <main className="flex h-[calc(100vh-5rem)] flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* Canvas (steps 1 & 2) */}
+        {(step === 1 || step === 2) && (
+          <div className={cn('relative flex flex-1 flex-col bg-[radial-gradient(circle_at_50%_30%,var(--blush)/40,transparent_70%)] transition-all duration-300', step === 1 ? 'lg:w-3/5' : 'lg:w-1/2')}>
+            {/* Floating toolbar */}
+            <div className="absolute left-1/2 top-4 z-20 flex -translate-x-1/2 items-center gap-4 rounded-full border border-[var(--blush)] bg-white/90 px-4 py-2 shadow-lg shadow-[var(--rose)]/10 backdrop-blur-md">
+              <div className="flex items-center gap-1.5">
+                <span className="mr-1 hidden text-xs text-[var(--stone)] sm:inline">Backdrop</span>
+                {colors.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setBgColor(c.value)}
+                    className={cn('h-6 w-6 rounded-full border shadow-sm transition-transform hover:scale-110', bgColor === c.value ? 'scale-110 border-transparent ring-2 ring-[var(--charcoal)] ring-offset-2' : 'border-gray-200')}
+                    style={{ backgroundColor: c.value }}
+                    aria-label={`Backdrop ${c.name}`}
+                  />
+                ))}
+              </div>
+              <div className="h-6 w-px bg-[var(--blush)]" />
+              <span className="whitespace-nowrap text-sm font-semibold text-[var(--charcoal)]">🌸 {flowers.length}</span>
+              <button
+                onClick={handleUndo}
+                disabled={undoStack.length === 0}
+                className="flex items-center gap-1 whitespace-nowrap text-xs text-[var(--stone)] transition-colors hover:text-[var(--rose)] disabled:opacity-40"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Undo</span>
+              </button>
+              <button
+                onClick={clearCanvas}
+                disabled={flowers.length === 0}
+                className="flex items-center gap-1 whitespace-nowrap text-xs text-[var(--stone)] transition-colors hover:text-[var(--rose)] disabled:opacity-40"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Clear</span>
+              </button>
+            </div>
+
+            {/* Floating flower controls */}
+            <AnimatePresence>
+              {selectedId && step === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95, x: '-50%' }}
+                  animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95, x: '-50%' }}
+                  className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-[var(--blush)] bg-white/95 px-3 py-2 shadow-xl shadow-[var(--rose)]/15 backdrop-blur-md"
+                >
+                  <button
+                    onClick={() => handleFlowerUpdate(selectedId, { rotation: (flowers.find(f => f.id === selectedId)?.rotation || 0) - 15 })}
+                    className="grid h-9 w-9 place-items-center rounded-full text-[var(--charcoal)] transition-colors hover:bg-[var(--blush)]/60"
+                    title="Rotate Left"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleFlowerUpdate(selectedId, { rotation: (flowers.find(f => f.id === selectedId)?.rotation || 0) + 15 })}
+                    className="grid h-9 w-9 place-items-center rounded-full text-[var(--charcoal)] transition-colors hover:bg-[var(--blush)]/60"
+                    title="Rotate Right"
+                  >
+                    <RotateCw className="h-4 w-4" />
+                  </button>
+                  <div className="mx-1 h-5 w-px bg-[var(--blush)]" />
+                  <button
+                    onClick={() => handleFlowerUpdate(selectedId, { scale: Math.max(0.4, (flowers.find(f => f.id === selectedId)?.scale || 1) - 0.1) })}
+                    className="grid h-9 w-9 place-items-center rounded-full text-[var(--charcoal)] transition-colors hover:bg-[var(--blush)]/60"
+                    title="Scale Down"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleFlowerUpdate(selectedId, { scale: Math.min(2.5, (flowers.find(f => f.id === selectedId)?.scale || 1) + 0.1) })}
+                    className="grid h-9 w-9 place-items-center rounded-full text-[var(--charcoal)] transition-colors hover:bg-[var(--blush)]/60"
+                    title="Scale Up"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </button>
+                  <div className="mx-1 h-5 w-px bg-[var(--blush)]" />
+                  <button
+                    onClick={() => handleFlowerDelete(selectedId)}
+                    className="grid h-9 w-9 place-items-center rounded-full text-red-500 transition-colors hover:bg-red-50"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Canvas frame */}
+            <div className="flex w-full flex-1 items-center justify-center overflow-y-auto p-4 pt-20">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="relative aspect-[4/5] w-full max-w-md overflow-hidden rounded-[1.75rem] bg-white shadow-2xl shadow-[var(--rose)]/15 ring-1 ring-[var(--blush)]"
+              >
+                <Canvas
+                  flowers={flowers}
+                  backgroundColor={bgColor}
+                  onFlowerMove={handleFlowerMove}
+                  onFlowerSelect={handleFlowerSelect}
+                  onFlowerDelete={handleFlowerDelete}
+                  onFlowerUpdate={handleFlowerUpdate}
+                  selectedId={selectedId}
+                />
+                <AnimatePresence>
+                  {step === 2 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      className="pointer-events-none absolute inset-x-4 bottom-4 z-30"
+                    >
+                      <NoteCard note={note} fromName={fromName} font={font} textColor={textColor} className="max-h-[50%] overflow-hidden shadow-2xl" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 1: Palette */}
+        {step === 1 && (
+          <div className="z-20 flex h-2/5 flex-col border-t border-[var(--blush)] bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.05)] lg:h-full lg:w-2/5 lg:border-l lg:border-t-0 lg:shadow-none">
+            <div className="hidden items-start justify-between gap-3 border-b border-[var(--blush)] p-6 lg:flex">
+              <div>
+                <h2 className="font-heading text-2xl text-[var(--charcoal)]">Your bouquet</h2>
+                <p className="mt-1 text-sm text-[var(--stone)]">Tap to add · drag to arrange</p>
+              </div>
+              <button
+                onClick={handleAutoGenerate}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--rose)]/10 px-3.5 py-2 text-sm font-medium text-[var(--rose-deep)] transition-colors hover:bg-[var(--rose)]/20"
+              >
+                <Wand2 className="h-4 w-4" /> Surprise me
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1 flex-1">
+                  {['All', ...Object.keys(FLOWER_CATEGORIES)].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setFilteredCategory(cat)}
+                      className={cn(
+                        'whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                        filteredCategory === cat
+                          ? 'bg-[var(--rose)] text-white shadow-md shadow-[var(--rose)]/20'
+                          : 'bg-[var(--blush)]/40 text-[var(--stone)] hover:bg-[var(--blush)]/70 hover:text-[var(--charcoal)]'
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-[var(--charcoal)] ml-2 whitespace-nowrap">
+                  <input type="checkbox" checked={filteredOccasionFlowers} onChange={e => setFilteredOccasionFlowers(e.target.checked)} className="rounded text-[var(--rose)] focus:ring-[var(--rose)]" />
+                  For Occasion
+                </label>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3 pb-24 sm:grid-cols-6 lg:grid-cols-4 lg:pb-0 xl:grid-cols-5">
+                <AnimatePresence mode="popLayout">
+                  {visibleFlowers.map((flowerObj) => {
+                    const type = typeof flowerObj === 'string' ? flowerObj : flowerObj.id;
+                    return (
+                      <motion.button
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                        key={type}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => handleAddFlower(type)}
+                        className="group flex aspect-square items-center justify-center rounded-2xl bg-gradient-to-br from-white to-[var(--blush)]/40 ring-1 ring-[var(--blush)] transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[var(--rose)]/10 hover:ring-[var(--rose)]/40"
+                        title={`Add ${type.replace('-', ' ')}`}
+                      >
+                        <FlowerSVG type={type} width={42} height={42} />
+                      </motion.button>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Mobile surprise + Next */}
+            <div className="flex items-center gap-3 border-t border-[var(--blush)] bg-white/60 p-4 lg:justify-end lg:p-6">
+              <button
+                onClick={handleAutoGenerate}
+                className="flex items-center gap-1.5 rounded-full bg-[var(--rose)]/10 px-4 py-3 text-sm font-medium text-[var(--rose-deep)] transition-colors hover:bg-[var(--rose)]/20 lg:hidden"
+              >
+                <Wand2 className="h-4 w-4" /> Surprise
+              </button>
+              <button
+                onClick={() => goToStep(2)}
+                disabled={flowers.length === 0}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 font-medium text-white shadow-lg transition-all lg:flex-none',
+                  flowers.length === 0 ? 'cursor-not-allowed bg-gray-300 opacity-80' : 'bg-[var(--rose)] shadow-[var(--rose)]/25 hover:bg-[var(--rose-deep)] hover:shadow-xl'
+                )}
+              >
+                Next: Write note <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Note editor */}
+        {step === 2 && (
+          <div className="z-20 flex h-1/2 flex-col overflow-y-auto border-t border-[var(--blush)] bg-white lg:h-full lg:w-1/2 lg:border-l lg:border-t-0">
+            <div className="mx-auto flex w-full max-w-xl flex-1 flex-col p-6 sm:p-8">
+              <h2 className="font-heading text-3xl text-[var(--charcoal)]">Write your message</h2>
+              <p className="mt-1 text-sm text-[var(--stone)]">A few heartfelt words go a long way.</p>
+
+              <div className="mt-6 space-y-6">
+                <div>
+                  <div className="relative">
+                    <textarea
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      maxLength={500}
+                      placeholder="Write something from the heart..."
+                      className="h-40 w-full resize-none rounded-2xl border border-[var(--blush)] bg-[var(--background)] p-4 font-script text-xl text-[var(--charcoal)] outline-none transition-all placeholder:text-[var(--stone)]/60 focus:border-[var(--rose)] focus:ring-2 focus:ring-[var(--rose)]/30"
+                    />
+                    <span className="absolute bottom-3 right-3 text-xs text-[var(--stone)]">{note.length}/500</span>
+                  </div>
+                  {/* AI Actions */}
+                  <div className="mt-2 flex items-center justify-between">
+                    <select
+                      value={selectedTone}
+                      onChange={(e) => setSelectedTone(e.target.value)}
+                      className="text-xs text-[var(--stone)] bg-transparent border-none outline-none focus:ring-0"
+                    >
+                      {['warm', 'romantic', 'playful', 'sincere', 'poetic', 'brief', 'comforting', 'formal'].map(t => (
+                        <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                      ))}
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => generateAINote('warmer')}
+                        disabled={aiLoading || !note}
+                        className="text-xs text-[var(--charcoal)] disabled:opacity-50 transition hover:text-[var(--rose)]"
+                      >
+                        Make Warmer
+                      </button>
+                      <button
+                        onClick={() => generateAINote('shorten')}
+                        disabled={aiLoading || !note}
+                        className="text-xs text-[var(--charcoal)] disabled:opacity-50 transition hover:text-[var(--rose)]"
+                      >
+                        Make Shorter
+                      </button>
+                      <button
+                        onClick={() => generateAINote('generate')}
+                        disabled={aiLoading}
+                        className="flex items-center gap-1 text-xs text-white bg-[var(--rose)] px-3 py-1 rounded-full disabled:opacity-50 transition hover:bg-[var(--rose-deep)]"
+                      >
+                        {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        Generate
+                      </button>
+                    </div>
+                  </div>
+                  {aiError && <p className="mt-1 text-xs text-red-500">{aiError}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={fromName}
+                    onChange={(e) => setFromName(e.target.value)}
+                    placeholder="Your name (optional)"
+                    maxLength={50}
+                    className="w-full rounded-xl border border-[var(--blush)] bg-white px-4 py-3 text-[var(--charcoal)] outline-none transition-all focus:border-[var(--rose)] focus:ring-2 focus:ring-[var(--rose)]/30"
+                  />
+                  <input
+                    type="text"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                    placeholder="Recipient name (optional)"
+                    maxLength={80}
+                    className="w-full rounded-xl border border-[var(--blush)] bg-white px-4 py-3 text-[var(--charcoal)] outline-none transition-all focus:border-[var(--rose)] focus:ring-2 focus:ring-[var(--rose)]/30"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-[var(--charcoal)]">Typography</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {FONT_OPTIONS.filter((f) => f.id !== 'elegant').map((f) => (
+                      <button
+                        key={f.id}
+                        onClick={() => setFont(f.id)}
+                        className={cn('rounded-xl border px-3 py-2.5 text-sm transition-all', font === f.id ? 'border-transparent bg-[var(--rose)] text-white shadow-md shadow-[var(--rose)]/20' : 'border-[var(--blush)] bg-white text-[var(--charcoal)] hover:bg-[var(--blush)]/30')}
+                      >
+                        <span className={f.id === 'script' ? 'font-script text-lg' : f.className}>{f.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-[var(--charcoal)]">Text colour</label>
+                  <div className="flex flex-wrap gap-3">
+                    {textColors.map((c) => (
+                      <button
+                        key={c.value}
+                        onClick={() => setTextColor(c.value)}
+                        className={cn('h-8 w-8 rounded-full border-2 transition-transform hover:scale-110', textColor === c.value ? 'scale-110 border-transparent ring-2 ring-[var(--charcoal)] ring-offset-2' : 'border-gray-200')}
+                        style={{ backgroundColor: c.value }}
+                        aria-label={`Text colour ${c.name}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[var(--blush)] bg-[var(--blush)]/25 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-[var(--charcoal)]">
+                    <Sparkles className="h-4 w-4 text-[var(--rose)]" /> Need inspiration?
+                  </h3>
+                  
+                  <div className="hide-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
+                    {OCCASIONS.map((occ) => (
+                      <button
+                        key={occ.slug}
+                        onClick={() => setOccasion(occ.slug)}
+                        className={cn(
+                          'whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                          occasion === occ.slug
+                            ? 'bg-[var(--rose)] text-white'
+                            : 'bg-white border border-[var(--blush)] text-[var(--stone)] hover:bg-[var(--blush)]/40 hover:text-[var(--charcoal)]'
+                        )}
+                      >
+                        {occ.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    {activeTemplates.slice(0, visibleTemplateCount).map((msg, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setNote(msg)}
+                        className="block w-full rounded-lg bg-white/70 p-3 text-left text-sm text-[var(--charcoal)] transition-all hover:bg-white hover:text-[var(--rose-deep)] hover:shadow-sm"
+                      >
+                        &ldquo;{msg}&rdquo;
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {activeTemplates.length > visibleTemplateCount && (
+                    <button
+                      onClick={() => setVisibleTemplateCount(prev => prev + 4)}
+                      className="mt-3 w-full rounded-lg border border-dashed border-[var(--blush)] py-2 text-xs font-medium text-[var(--stone)] transition-colors hover:bg-[var(--blush)]/30 hover:text-[var(--charcoal)]"
+                    >
+                      More ideas
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 mt-auto flex justify-between border-t border-[var(--blush)] bg-white/90 p-5 backdrop-blur-sm">
+              <button onClick={() => goToStep(1)} className="flex items-center gap-2 rounded-full px-5 py-3 font-medium text-[var(--charcoal)] transition-colors hover:bg-[var(--blush)]/40">
+                <ChevronLeft className="h-5 w-5" /> Back
+              </button>
+              <div className="flex items-center gap-2">
+                <span className={cn("text-xs transition-opacity", draftSaved ? "opacity-100 text-green-600" : "opacity-0")}>Draft saved</span>
+                <button
+                  onClick={handleCreate}
+                  disabled={isSubmitting}
+                  className="flex items-center gap-2 rounded-full bg-[var(--charcoal)] px-7 py-3 font-medium text-white shadow-lg transition-all hover:bg-black disabled:cursor-wait disabled:opacity-70"
+                >
+                  {isSubmitting ? 'Creating…' : <>Finish bouquet <Check className="h-5 w-5" /></>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Success */}
+        {step === 3 && (
+          <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden p-6">
+            {/* floating petals */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: -40, x: (i - 3) * 60 }}
+                animate={{ opacity: [0, 1, 0], y: 220 }}
+                transition={{ duration: 3.5, delay: i * 0.3, repeat: Infinity, repeatDelay: 1.5 }}
+                className="pointer-events-none absolute top-10 text-2xl"
+              >
+                🌸
+              </motion.div>
+            ))}
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="relative z-10 w-full max-w-md rounded-3xl border border-[var(--blush)] bg-white p-8 text-center shadow-2xl shadow-[var(--rose)]/10"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 14 }}
+                className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[var(--rose)] to-[var(--rose-deep)] text-white shadow-lg shadow-[var(--rose)]/30"
+              >
+                <Check className="h-10 w-10" />
+              </motion.div>
+
+              <h2 className="font-heading text-3xl text-[var(--charcoal)] sm:text-4xl">Your bouquet is ready!</h2>
+              <p className="mt-2 text-[var(--stone)]">Share this link with someone special.</p>
+
+              <div className="mt-7 flex items-center gap-2 rounded-xl border border-[var(--blush)] bg-[var(--background)] p-1.5 pl-4">
+                <input
+                  type="text"
+                  readOnly
+                  value={shareUrl}
+                  onClick={(e) => e.currentTarget.select()}
+                  className="flex-1 truncate bg-transparent font-mono text-sm text-[var(--stone)] outline-none"
+                />
+                <button onClick={handleCopyLink} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--rose)] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--rose-deep)]">
+                  <Copy className="h-4 w-4" /> Copy
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`I made you a virtual bouquet! 💐 Open it here: ${shareUrl}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-4 py-3 font-medium text-white shadow-md transition-colors hover:bg-[#128C7E]"
+                >
+                  <MessageCircle className="h-5 w-5" /> WhatsApp
+                </a>
+                <a
+                  href={`mailto:?subject=${encodeURIComponent('A virtual bouquet for you')}&body=${encodeURIComponent(`I made you a bouquet. You can view it here: ${shareUrl}`)}`}
+                  className="flex items-center justify-center gap-2 rounded-full border border-[var(--blush)] bg-white px-4 py-3 font-medium text-[var(--charcoal)] transition-colors hover:bg-[var(--blush)]/30"
+                >
+                  <Mail className="h-5 w-5" /> Email
+                </a>
+              </div>
+
+              <Link
+                href={`/b/${slug}`}
+                className="mt-3 flex items-center justify-center gap-2 rounded-full bg-[var(--charcoal)] px-4 py-3 font-medium text-white transition-colors hover:bg-black"
+              >
+                <Eye className="h-5 w-5" /> View your bouquet
+              </Link>
+
+              <button
+                onClick={() => {
+                  goToStep(1);
+                  clearCanvas();
+                  setNote('');
+                  setFromName('');
+                  setRecipientName('');
+                  setSlug(null);
+                }}
+                className="mt-6 text-sm font-medium text-[var(--stone)] underline underline-offset-4 transition-colors hover:text-[var(--rose)]"
+              >
+                Create another bouquet
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </main>
+
+      <Toast message={toastMessage} isVisible={!!toastMessage} onClose={() => setToastMessage('')} type="success" />
+    </div>
+  );
+}
+
+export default function CreateBouquet() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-white"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--rose)] border-t-transparent" /></div>}>
+      <CreateBouquetInner />
+    </Suspense>
+  );
+}

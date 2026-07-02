@@ -1,50 +1,71 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BouquetViewer } from './BouquetViewer';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 async function getBouquet(slug: string) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/bouquet/${slug}`, { 
-      cache: 'no-store' 
+    // Read directly from db on server side to avoid absolute URL fetch issues on Vercel
+    const bouquet = await prisma.bouquet.findUnique({
+      where: { slug },
+      include: {
+        flowers: {
+          include: { flowerAsset: true }
+        }
+      }
     });
     
-    if (res.status === 404) return null;
-    if (res.status === 410) return 'expired';
-    if (!res.ok) return null;
+    if (!bouquet) return null;
     
-    return res.json();
+    // Check expiration if needed, or status.
+    return bouquet;
   } catch (e) {
     console.error("Failed to fetch bouquet", e);
     return null;
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const bouquet = await getBouquet(slug);
 
-  if (!bouquet || bouquet === 'expired') {
+  if (!bouquet) {
     return {
-      title: 'Bouquet Not Found | Dear Bloomy',
+      title: 'Bouquet Not Found | BloomNote',
       description: 'This bouquet does not exist or has expired.',
+      robots: { index: false, follow: false },
     };
   }
 
-  const title = bouquet.fromName ? `A bouquet for you from ${bouquet.fromName}` : 'Someone sent you a digital bouquet';
-  const description = bouquet.note ? `"${bouquet.note.substring(0, 100)}${bouquet.note.length > 100 ? '...' : ''}" - Click to open your bouquet.` : 'Open your digital bouquet to reveal the flowers and message inside.';
+  const sender = bouquet.senderName ? bouquet.senderName : 'Someone';
+  const title = bouquet.recipientName 
+    ? `${sender} sent a bouquet for ${bouquet.recipientName}` 
+    : `${sender} sent you a bouquet`;
+    
+  const description = bouquet.noteText 
+    ? `"${bouquet.noteText.substring(0, 100)}${bouquet.noteText.length > 100 ? '...' : ''}" - Click to open your bouquet.` 
+    : 'Open your digital bouquet to reveal the flowers and message inside.';
   
   return {
-    title: `${title} | Dear Bloomy`,
+    title: `${title} | BloomNote`,
     description,
+    robots: { index: false, follow: false },
     openGraph: {
       title,
       description,
       type: 'website',
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/b/${slug}`,
-      siteName: 'Dear Bloomy',
+      url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/b/${slug}`,
+      siteName: 'BloomNote',
       images: [
         {
-          url: `${process.env.NEXT_PUBLIC_APP_URL}/api/og?title=${encodeURIComponent(title)}`,
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/og?title=${encodeURIComponent(title)}`,
           width: 1200,
           height: 630,
           alt: 'A digital bouquet',
@@ -55,42 +76,31 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       card: 'summary_large_image',
       title,
       description,
-      images: [`${process.env.NEXT_PUBLIC_APP_URL}/api/og?title=${encodeURIComponent(title)}`],
+      images: [`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/og?title=${encodeURIComponent(title)}`],
     },
   };
 }
 
-export default async function ViewBouquetPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ViewBouquetPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const sp = await searchParams;
+  const isPreview = sp.preview === 'true';
+  
   const bouquet = await getBouquet(slug);
-
-  if (bouquet === 'expired') {
-    return (
-      <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto text-center">
-          <h1 className="font-heading text-2xl text-[var(--charcoal)] mb-4">This bouquet has expired</h1>
-          <p className="text-[var(--stone)] mb-8">For privacy, bouquets expire after 30 days.</p>
-          <a href="/create" className="inline-block bg-[var(--rose)] text-white px-6 py-3 rounded-full font-medium hover:bg-opacity-90">
-            Create New Bouquet
-          </a>
-        </div>
-      </div>
-    );
-  }
 
   if (!bouquet) {
     return (
       <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto text-center">
+        <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto text-center border border-black/5">
           <h1 className="font-heading text-2xl text-[var(--charcoal)] mb-4">Bouquet not found</h1>
-          <p className="text-[var(--stone)] mb-8">This bouquet doesn't exist or has been removed.</p>
-          <a href="/create" className="inline-block bg-[var(--rose)] text-white px-6 py-3 rounded-full font-medium hover:bg-opacity-90">
-            Create New Bouquet
+          <p className="text-[var(--stone)] mb-8">This bouquet doesn't exist or has expired.</p>
+          <a href="/create" className="inline-block bg-[var(--rose)] text-white px-8 py-3 rounded-full font-medium hover:bg-opacity-90 shadow-md">
+            Create Your Own
           </a>
         </div>
       </div>
     );
   }
 
-  return <BouquetViewer bouquet={bouquet} />;
+  return <BouquetViewer bouquet={bouquet} isPreview={isPreview} />;
 }

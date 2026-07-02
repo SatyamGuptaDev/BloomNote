@@ -20,7 +20,13 @@ const bouquetSchema = z.object({
   textColor: z.string().max(30).optional(),
   music: z.string().max(100).nullable().optional(),
   bgColor: z.string().max(30).optional(),
-  bgImage: z.string().url().max(1000).nullable().optional().or(z.literal(''))
+  bgImage: z.string().url().max(1000).nullable().optional().or(z.literal('')),
+  wrapStyle: z.enum(['none', 'kraft', 'pastel', 'satin', 'cream', 'frosted', 'festive']).optional(),
+  ribbonColor: z.string().max(30).optional(),
+  occasion: z.string().max(50).optional(),
+  recipientName: z.string().max(100).optional(),
+  noteCardStyle: z.string().max(50).optional(),
+  themeName: z.string().max(100).optional()
 })
 
 /**
@@ -55,6 +61,12 @@ const bouquetSchema = z.object({
  *               font: { type: string, example: script }
  *               textColor: { type: string, example: '#2D2D2D' }
  *               bgColor: { type: string, example: '#FAF3EC' }
+ *               wrapStyle: { type: string, example: 'satin' }
+ *               ribbonColor: { type: string, example: '#C41E3A' }
+ *               occasion: { type: string, example: 'birthday' }
+ *               recipientName: { type: string, example: 'Alex' }
+ *               noteCardStyle: { type: string, example: 'minimal' }
+ *               themeName: { type: string, example: 'romantic-red' }
  *     responses:
  *       200:
  *         description: Bouquet created
@@ -88,7 +100,13 @@ export async function POST(req: Request) {
         textColor: parsed.textColor || '#4a4a4a',
         music: parsed.music,
         bgColor: parsed.bgColor || '#fdf6f0',
-        bgImage: parsed.bgImage
+        bgImage: parsed.bgImage,
+        wrapStyle: parsed.wrapStyle,
+        ribbonColor: parsed.ribbonColor,
+        occasion: parsed.occasion,
+        recipientName: parsed.recipientName,
+        noteCardStyle: parsed.noteCardStyle,
+        themeName: parsed.themeName
       }
     })
 
@@ -97,7 +115,54 @@ export async function POST(req: Request) {
       url: `${process.env.NEXT_PUBLIC_APP_URL}/b/${bouquet.slug}` 
     })
   } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid payload', details: error.errors }, { status: 400 })
+    }
+    console.error('Server error creating bouquet:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const slug = searchParams.get('slug')
+
+    if (!slug) {
+      return NextResponse.json({ error: 'Missing slug parameter' }, { status: 400 })
+    }
+
+    const bouquet = await prisma.bouquet.update({
+      where: { slug },
+      data: { views: { increment: 1 } }
+    })
+
+    if (!bouquet) {
+      return NextResponse.json({ error: 'Bouquet not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      slug: bouquet.slug,
+      flowers: JSON.parse(bouquet.flowers),
+      note: bouquet.note,
+      fromName: bouquet.fromName,
+      font: bouquet.font,
+      textColor: bouquet.textColor,
+      bgColor: bouquet.bgColor,
+      wrapStyle: bouquet.wrapStyle,
+      ribbonColor: bouquet.ribbonColor,
+      occasion: bouquet.occasion,
+      recipientName: bouquet.recipientName,
+      noteCardStyle: bouquet.noteCardStyle,
+      themeName: bouquet.themeName,
+      views: bouquet.views,
+      createdAt: bouquet.createdAt
+    })
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'Bouquet not found' }, { status: 404 })
+    }
+    console.error('Server error fetching bouquet:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

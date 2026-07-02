@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { WordReveal } from '@/components/magic/WordReveal';
 
 interface NoteCardProps {
   note: string;
@@ -44,9 +45,9 @@ export function NoteCard({ note, fromName, font, textColor, className, delay = 0
         </svg>
       </div>
       
-      <p className={cn("text-center whitespace-pre-wrap", getFontClass(font))}>
-        {displayNote}
-      </p>
+      <div className={cn("text-center whitespace-pre-wrap flex flex-col gap-1 items-center", getFontClass(font))}>
+        <WordReveal text={displayNote} delay={delay} />
+      </div>
 
       {fromName && fromName.trim().length > 0 && (
         <p className="text-center text-[var(--stone)] text-sm mt-6 font-body uppercase tracking-wider">

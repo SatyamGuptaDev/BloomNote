@@ -1,0 +1,34 @@
+[
+  {
+    "id": "flower-rose-red",
+    "name": "Red Rose",
+    "category": "Roses",
+    "colorTag": "Red",
+    "meaningTag": "Romance, Love",
+    "imagePath": "/flowers/rose-red.svg"
+  },
+  {
+    "id": "flower-peony-white",
+    "name": "White Peony",
+    "category": "Peonies",
+    "colorTag": "White",
+    "meaningTag": "Prosperity, Romance",
+    "imagePath": "/flowers/peony-white.svg"
+  },
+  {
+    "id": "flower-sunflower",
+    "name": "Sunflower",
+    "category": "Wildflowers",
+    "colorTag": "Yellow",
+    "meaningTag": "Friendship, Joy",
+    "imagePath": "/flowers/sunflower.png"
+  },
+  {
+    "id": "flower-eucalyptus",
+    "name": "Eucalyptus",
+    "category": "Greenery",
+    "colorTag": "Green",
+    "meaningTag": "Protection, Healing",
+    "imagePath": "/flowers/eucalyptus.png"
+  }
+]

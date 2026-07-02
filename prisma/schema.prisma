@@ -1,3 +1,10 @@
+// -- ALTER TABLE Bouquet ADD COLUMN wrapStyle TEXT;
+// -- ALTER TABLE Bouquet ADD COLUMN ribbonColor TEXT;
+// -- ALTER TABLE Bouquet ADD COLUMN occasion TEXT;
+// -- ALTER TABLE Bouquet ADD COLUMN recipientName TEXT;
+// -- ALTER TABLE Bouquet ADD COLUMN noteCardStyle TEXT;
+// -- ALTER TABLE Bouquet ADD COLUMN themeName TEXT;
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,21 +15,65 @@ datasource db {
 }
 
 model Bouquet {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  flowers     String   // SQLite doesn't natively support JSON in older versions of Prisma but Prisma handles it. Let's stick to String and parse it in the API. Wait, Prisma supports Json on SQLite now? Yes, but just to be safe, String is better if it fails. Actually, Prisma *does* support String. Let's use String for flowers and parse it.
-  note        String?
-  fromName    String?
-  font        String   @default("serif")
-  textColor   String   @default("#4a4a4a")
-  music       String?
-  bgColor     String   @default("#fdf6f0")
-  bgImage     String?
-  views       Int      @default(0)
-  createdAt   DateTime @default(now())
-  isPublic    Boolean  @default(true)
-  
+  id            String          @id @default(cuid())
+  slug          String          @unique
+  status        String          @default("draft") // draft, sent, viewed
+  senderName    String?
+  recipientName String?
+  noteText      String?
+  noteFont      String          @default("serif")
+  textColor     String          @default("#4a4a4a")
+  backgroundId  String?
+  musicId       String?
+  bgColor       String          @default("#fdf6f0")
+  bgImage       String?
+  views         Int             @default(0)
+  createdAt     DateTime        @default(now())
+  viewedAt      DateTime?
+  expiresAt     DateTime?
+  userId        String?
+  isPublic      Boolean         @default(true)
+  wrapStyle     String?
+  ribbonColor   String?
+  occasion      String?
+  noteCardStyle String?
+  themeName     String?
+
+  flowers       BouquetFlower[]
+  user          User?           @relation(fields: [userId], references: [id])
+
   @@index([slug])
+}
+
+model BouquetFlower {
+  id            String      @id @default(cuid())
+  bouquetId     String
+  flowerAssetId String
+  positionX     Float       @default(50.0) // percentage
+  positionY     Float       @default(50.0) // percentage
+  rotation      Float       @default(0.0)
+  scale         Float       @default(1.0)
+  zIndex        Int         @default(1)
+  colorVariant  String?
+
+  bouquet       Bouquet     @relation(fields: [bouquetId], references: [id], onDelete: Cascade)
+  flowerAsset   FlowerAsset @relation(fields: [flowerAssetId], references: [id])
+
+  @@index([bouquetId])
+  @@index([flowerAssetId])
+}
+
+model FlowerAsset {
+  id          String          @id @default(cuid())
+  name        String
+  category    String
+  colorTag    String?
+  meaningTag  String?
+  imagePath   String
+
+  bouquets    BouquetFlower[]
+  
+  @@index([category])
 }
 
 model BlogPost {
@@ -53,6 +104,7 @@ model User {
   password      String? // hashed, for email/password sign-in
   accounts      Account[]
   sessions      Session[]
+  bouquets      Bouquet[]
   createdAt     DateTime  @default(now())
 }
 

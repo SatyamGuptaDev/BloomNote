@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { isBouquetExpired } from '@/lib/utils'
 
 export async function GET(
   req: Request,
@@ -8,25 +7,42 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
-    const bouquet = await prisma.bouquet.findUnique({
-      where: { slug }
-    })
 
-    if (!bouquet) {
-      return NextResponse.json({ error: 'Bouquet not found' }, { status: 404 })
+    if (!slug) {
+      return NextResponse.json({ error: 'Missing slug parameter' }, { status: 400 })
     }
 
-    await prisma.bouquet.update({
+    const bouquet = await prisma.bouquet.update({
       where: { slug },
       data: { views: { increment: 1 } }
     })
 
+    if (!bouquet) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     return NextResponse.json({
-      ...bouquet,
-      flowers: JSON.parse(bouquet.flowers as string)
+      slug: bouquet.slug,
+      flowers: JSON.parse(bouquet.flowers),
+      note: bouquet.note,
+      fromName: bouquet.fromName,
+      font: bouquet.font,
+      textColor: bouquet.textColor,
+      bgColor: bouquet.bgColor,
+      wrapStyle: bouquet.wrapStyle,
+      ribbonColor: bouquet.ribbonColor,
+      occasion: bouquet.occasion,
+      recipientName: bouquet.recipientName,
+      noteCardStyle: bouquet.noteCardStyle,
+      themeName: bouquet.themeName,
+      views: bouquet.views,
+      createdAt: bouquet.createdAt
     })
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    console.error('Server error fetching bouquet by slug:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

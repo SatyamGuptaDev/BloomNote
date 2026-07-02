@@ -55,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${dancingScript.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${dancingScript.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
       </body>

@@ -28,7 +28,7 @@ interface CanvasProps {
 }
 
 export function Canvas({
-  flowers,
+  flowers = [],
   backgroundColor,
   onFlowerMove,
   onFlowerSelect,
@@ -56,7 +56,7 @@ export function Canvas({
 
       {flowers.map((flower, index) => (
         <FlowerDraggable 
-          key={flower.id}
+          key={flower.id || `flower-${index}`}
           flower={flower}
           isSelected={selectedId === flower.id}
           readOnly={readOnly}
