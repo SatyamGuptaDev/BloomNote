@@ -21,6 +21,9 @@ export default function CardStudio() {
   const [paperTexture, setPaperTexture] = useState<string>('matte');
   const [font, setFont] = useState<string>('font-serif');
 
+  // Mobile Tab State
+  const [mobileTab, setMobileTab] = useState<'format' | 'theme'>('format');
+
   // Handle Design Defaults
   const handleThemeSelect = (themeId: string, theme: any) => {
     setSelectedThemeId(themeId);
@@ -91,19 +94,41 @@ export default function CardStudio() {
             />
           </div>
           
-          <div className="flex-1 overflow-y-auto bg-white pb-24">
-            <div className="p-4 border-b border-border/50 bg-muted/30">
-               <h3 className="text-sm font-bold text-[var(--charcoal)] uppercase tracking-wider mb-2">1. Format</h3>
+          <div className="flex-1 flex flex-col min-h-0 bg-white">
+            <div className="flex border-b border-border shrink-0 bg-white/95 backdrop-blur-sm z-20 shadow-sm relative">
+              <button 
+                onClick={() => setMobileTab('format')}
+                className={`flex-1 py-4 text-xs font-bold tracking-widest uppercase transition-colors relative ${mobileTab === 'format' ? 'text-[var(--charcoal)]' : 'text-muted-foreground'}`}
+              >
+                1. Format
+                {mobileTab === 'format' && (
+                  <motion.div layoutId="mobile-tab-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--rose)]" />
+                )}
+              </button>
+              <div className="w-px bg-border/50 my-3" />
+              <button 
+                onClick={() => setMobileTab('theme')}
+                className={`flex-1 py-4 text-xs font-bold tracking-widest uppercase transition-colors relative ${mobileTab === 'theme' ? 'text-[var(--charcoal)]' : 'text-muted-foreground'}`}
+              >
+                2. Theme
+                {mobileTab === 'theme' && (
+                  <motion.div layoutId="mobile-tab-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--rose)]" />
+                )}
+              </button>
             </div>
-            <div className="h-[300px]">
-               <CardFormatPicker selectedFormatId={selectedFormat} onSelect={setSelectedFormat} />
-            </div>
-
-            <div className="p-4 border-y border-border/50 bg-muted/30">
-               <h3 className="text-sm font-bold text-[var(--charcoal)] uppercase tracking-wider mb-2">2. Cover Theme</h3>
-            </div>
-            <div className="h-[400px]">
-               <ThemeLibrary selectedThemeId={selectedThemeId} onSelect={handleThemeSelect} />
+            
+            <div className="flex-1 relative overflow-hidden pb-24">
+              <AnimatePresence mode="wait">
+                {mobileTab === 'format' ? (
+                  <motion.div key="format" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className="absolute inset-0">
+                    <CardFormatPicker selectedFormatId={selectedFormat} onSelect={(id) => { setSelectedFormat(id); setMobileTab('theme'); }} />
+                  </motion.div>
+                ) : (
+                  <motion.div key="theme" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2 }} className="absolute inset-0">
+                    <ThemeLibrary selectedThemeId={selectedThemeId} onSelect={handleThemeSelect} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
