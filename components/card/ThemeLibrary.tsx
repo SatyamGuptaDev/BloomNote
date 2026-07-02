@@ -30,7 +30,7 @@ export function ThemeLibrary({ selectedThemeId, onSelect }: ThemeLibraryProps) {
             <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--stone)] mb-3">
               {category}
             </h3>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {themes.map((theme) => {
                 const isSelected = selectedThemeId === theme.id;
                 
@@ -40,7 +40,7 @@ export function ThemeLibrary({ selectedThemeId, onSelect }: ThemeLibraryProps) {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => onSelect(theme.id, theme)}
-                    className={`relative w-full aspect-[4/5] rounded-xl overflow-hidden shadow-sm transition-all duration-300 ring-2 ring-offset-2 ${
+                    className={`relative w-full aspect-[3/4] rounded-xl overflow-hidden shadow-sm transition-all duration-300 ring-2 ring-offset-2 ${
                       isSelected ? 'ring-[var(--rose)]' : 'ring-transparent hover:ring-black/10'
                     }`}
                     style={{ backgroundColor: theme.defaultPalette.bg }}
