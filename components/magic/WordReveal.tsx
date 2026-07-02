@@ -38,9 +38,9 @@ export function WordReveal({ text, className, delay = 0, stagger = 0.09 }: WordR
       aria-label={text}
     >
       {words.map((word, i) => (
-        <motion.span key={`${word}-${i}`} variants={child} className="inline-block whitespace-pre" aria-hidden>
+        <motion.span key={`${word}-${i}`} variants={child} className="inline-block whitespace-pre-wrap break-words max-w-full" aria-hidden>
           {word}
-          {i < words.length - 1 ? ' ' : ''}
+          {i < words.length - 1 ? '\u00A0' : ''}
         </motion.span>
       ))}
     </motion.span>

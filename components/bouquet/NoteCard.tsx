@@ -45,7 +45,7 @@ export function NoteCard({ note, fromName, font, textColor, className, delay = 0
         </svg>
       </div>
       
-      <div className={cn("text-center whitespace-pre-wrap flex flex-col gap-1 items-center", getFontClass(font))}>
+      <div className={cn("text-center whitespace-pre-wrap break-words flex flex-col gap-1 items-center max-w-full", getFontClass(font))}>
         <WordReveal text={displayNote} delay={delay} />
       </div>
 

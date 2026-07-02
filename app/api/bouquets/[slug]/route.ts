@@ -5,11 +5,12 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const bouquet = await prisma.bouquet.findUnique({
-      where: { slug: params.slug },
+      where: { slug },
       include: {
         flowers: {
           include: {

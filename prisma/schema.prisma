@@ -191,10 +191,11 @@ model CardElement {
   type      String  // sticker, photo, signature
   payload   String  // sticker id, photo URL, or SVG path
   positionX Float   @default(50.0)
-  positionY Float   @default(50.0)
-  rotation  Float   @default(0.0)
-  scale     Float   @default(1.0)
-  zIndex    Int     @default(1)
+  positionY   Float   @default(50.0)
+  rotation    Float   @default(0.0)
+  scale       Float   @default(1.0)
+  zIndex      Int     @default(1)
+  textOptions String? // JSON string for { color, fontFamily }
 
   card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
 

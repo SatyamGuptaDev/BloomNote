@@ -5,11 +5,12 @@ const prisma = new PrismaClient();
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const bouquet = await prisma.bouquet.findUnique({
-      where: { slug: params.slug }
+      where: { slug }
     });
 
     if (!bouquet) {
@@ -18,7 +19,7 @@ export async function PATCH(
 
     if (!bouquet.viewedAt) {
       await prisma.bouquet.update({
-        where: { slug: params.slug },
+        where: { slug },
         data: {
           viewedAt: new Date(),
           views: { increment: 1 }
@@ -26,7 +27,7 @@ export async function PATCH(
       });
     } else {
       await prisma.bouquet.update({
-        where: { slug: params.slug },
+        where: { slug },
         data: { views: { increment: 1 } }
       });
     }

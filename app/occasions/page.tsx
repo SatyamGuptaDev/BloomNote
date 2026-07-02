@@ -30,7 +30,7 @@ export default function OccasionsPage() {
                 <div className="relative h-64 rounded-2xl overflow-hidden mb-4">
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors z-10" />
                   <Image 
-                    src={occ.image} 
+                    src={`https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=600&auto=format&fit=crop`} 
                     alt={occ.name} 
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-700"
