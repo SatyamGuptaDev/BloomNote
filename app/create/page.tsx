@@ -21,7 +21,7 @@ const gifts: Gift[] = [
   { name: 'Virtual Cake', desc: 'A 3D birthday cake with candles & a wish.', icon: Cake, href: '#', img: 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?q=80&w=800&auto=format&fit=crop', accent: '#D9A05B', live: false },
   { name: 'Hug Card', desc: 'A pull-to-open card with a warm virtual hug.', icon: Heart, href: '#', img: 'https://images.unsplash.com/photo-1607344645866-009c320b63e0?q=80&w=800&auto=format&fit=crop', accent: '#B7A0C9', live: false },
   { name: "Mother's Day Card", desc: 'An animated card that reveals your message.', icon: MailOpen, href: '#', img: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=800&auto=format&fit=crop', accent: '#C16E7E', live: false },
-  { name: 'Greeting Card', desc: 'A heartfelt card for any moment.', icon: Sparkles, href: '#', img: 'https://images.unsplash.com/photo-1606830733744-0ad778449672?q=80&w=800&auto=format&fit=crop', accent: '#8FA98A', live: false },
+  { name: 'Greeting Card', desc: 'A heartfelt card for any moment.', icon: Sparkles, href: '/create/card', img: 'https://images.unsplash.com/photo-1606830733744-0ad778449672?q=80&w=800&auto=format&fit=crop', accent: '#8FA98A', live: true },
 ];
 
 const container: Variants = { hidden: {}, visible: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } } };

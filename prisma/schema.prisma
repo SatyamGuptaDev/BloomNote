@@ -105,6 +105,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   bouquets      Bouquet[]
+  cards         Card[]
   createdAt     DateTime  @default(now())
 }
 
@@ -153,4 +154,49 @@ model Template {
   music       String?
   bgColor     String  @default("#fdf6f0")
   isFeatured  Boolean @default(false)
+}
+
+// ───────── Greeting Card Models ─────────
+
+model Card {
+  id            String          @id @default(cuid())
+  slug          String          @unique
+  status        String          @default("draft") // draft, sent, viewed
+  senderName    String?
+  recipientName String?
+  noteText      String?
+  noteFont      String          @default("serif")
+  textColor     String          @default("#4a4a4a")
+  format        String          @default("classic-fold")
+  themeId       String?
+  paperTexture  String          @default("matte")
+  musicId       String?
+  occasion      String?
+  scheduledFor  DateTime?
+  views         Int             @default(0)
+  createdAt     DateTime        @default(now())
+  viewedAt      DateTime?
+  userId        String?
+  isPublic      Boolean         @default(true)
+
+  elements      CardElement[]
+  user          User?           @relation(fields: [userId], references: [id])
+
+  @@index([slug])
+}
+
+model CardElement {
+  id        String  @id @default(cuid())
+  cardId    String
+  type      String  // sticker, photo, signature
+  payload   String  // sticker id, photo URL, or SVG path
+  positionX Float   @default(50.0)
+  positionY Float   @default(50.0)
+  rotation  Float   @default(0.0)
+  scale     Float   @default(1.0)
+  zIndex    Int     @default(1)
+
+  card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
 }

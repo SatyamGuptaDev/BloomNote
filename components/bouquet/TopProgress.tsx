@@ -1,19 +1,19 @@
 'use client';
 
 import { Check, ArrowLeft } from 'lucide-react';
-import { STUDIO_STAGES, StudioStage } from '@/types/studio';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
-interface TopProgressProps {
-  currentStage: StudioStage;
-  highestStage: StudioStage;
-  onNavigate: (stage: StudioStage) => void;
+interface TopProgressProps<T extends string> {
+  stages: { id: T; label: string }[];
+  currentStage: T;
+  highestStage: T;
+  onNavigate: (stage: T) => void;
 }
 
-export function TopProgress({ currentStage, highestStage, onNavigate }: TopProgressProps) {
-  const currentIndex = STUDIO_STAGES.findIndex(s => s.id === currentStage);
-  const highestIndex = Math.max(currentIndex, STUDIO_STAGES.findIndex(s => s.id === highestStage));
+export function TopProgress<T extends string>({ stages, currentStage, highestStage, onNavigate }: TopProgressProps<T>) {
+  const currentIndex = stages.findIndex(s => s.id === currentStage);
+  const highestIndex = Math.max(currentIndex, stages.findIndex(s => s.id === highestStage));
 
   return (
     <div className="w-full flex justify-center py-4 px-4 bg-background/80 backdrop-blur-md sticky top-0 z-50 border-b border-border relative">
@@ -30,10 +30,10 @@ export function TopProgress({ currentStage, highestStage, onNavigate }: TopProgr
         {/* Progress line active */}
         <div 
           className="absolute left-0 top-4 h-[2px] bg-[var(--rose)] -z-10 transition-all duration-500 ease-in-out" 
-          style={{ width: `${(currentIndex / (STUDIO_STAGES.length - 1)) * 100}%` }}
+          style={{ width: `${(currentIndex / (stages.length - 1)) * 100}%` }}
         />
 
-        {STUDIO_STAGES.map((stage, idx) => {
+        {stages.map((stage, idx) => {
           const isCompleted = idx < currentIndex;
           const isCurrent = idx === currentIndex;
           const isLocked = idx > highestIndex;
