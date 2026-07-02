@@ -61,10 +61,10 @@ export function DraggableElement({
   const handleRotateStart = (e: React.PointerEvent) => {
     e.stopPropagation();
     setIsInteracting(true);
-    if (!elementRef.current) return;
-    const rect = elementRef.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
+    if (!elementRef.current || !containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const cx = containerRect.left + (element.x / 100) * containerRect.width + x.get();
+    const cy = containerRect.top + (element.y / 100) * containerRect.height + y.get();
 
     const onMove = (me: PointerEvent) => {
        const angle = Math.atan2(me.clientY - cy, me.clientX - cx) * (180 / Math.PI);
@@ -83,10 +83,10 @@ export function DraggableElement({
   const handleScaleStart = (e: React.PointerEvent, corner: 'tl' | 'tr' | 'bl' | 'br') => {
     e.stopPropagation();
     setIsInteracting(true);
-    if (!elementRef.current) return;
-    const rect = elementRef.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
+    if (!elementRef.current || !containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const cx = containerRect.left + (element.x / 100) * containerRect.width + x.get();
+    const cy = containerRect.top + (element.y / 100) * containerRect.height + y.get();
     const startDist = Math.hypot(e.clientX - cx, e.clientY - cy);
     const startScale = element.scale;
 
@@ -109,14 +109,14 @@ export function DraggableElement({
     switch (element.type) {
       case 'sticker':
         return (
-          <div className="text-4xl filter drop-shadow-sm pointer-events-none whitespace-nowrap">
+          <div className="text-4xl filter drop-shadow-sm pointer-events-auto select-none whitespace-nowrap">
             {element.payload}
           </div>
         );
       case 'text':
         return (
           <div 
-            className={cn("text-xl filter drop-shadow-sm pointer-events-none whitespace-pre-wrap break-words w-max max-w-[280px] text-center leading-relaxed", element.textOptions?.fontFamily)}
+            className={cn("text-xl filter drop-shadow-sm pointer-events-auto select-none whitespace-pre-wrap break-words w-max max-w-[280px] text-center leading-relaxed", element.textOptions?.fontFamily)}
             style={{ color: element.textOptions?.color || 'var(--charcoal)' }}
           >
             {element.payload}
@@ -124,17 +124,17 @@ export function DraggableElement({
         );
       case 'photo':
         return (
-          <div className="bg-white p-2 pb-6 shadow-md pointer-events-none relative">
+          <div className="bg-white p-2 pb-6 shadow-md pointer-events-auto select-none relative">
             <div className="relative w-24 h-24 overflow-hidden border border-black/5 bg-gray-100">
-              <img src={element.payload} alt="Photo" className="w-full h-full object-cover" />
+              <img src={element.payload} alt="Photo" className="w-full h-full object-cover pointer-events-none" draggable={false} />
             </div>
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-3 bg-white/40 backdrop-blur-md rotate-[-3deg] shadow-sm" />
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-3 bg-white/40 backdrop-blur-md rotate-[-3deg] shadow-sm pointer-events-none" />
           </div>
         );
       case 'signature':
         return (
-          <div className="pointer-events-none">
-            <svg viewBox="0 0 300 150" className="w-32 h-auto text-[var(--charcoal)] drop-shadow-sm overflow-visible">
+          <div className="pointer-events-auto select-none">
+            <svg viewBox="0 0 300 150" className="w-32 h-auto text-[var(--charcoal)] drop-shadow-sm overflow-visible pointer-events-none">
               <path
                 d={element.payload}
                 fill="none"
@@ -165,6 +165,8 @@ export function DraggableElement({
         top: `${element.y}%`,
         x,
         y,
+        originX: 0,
+        originY: 0,
         zIndex: (isSelected && !readOnly) ? 9999 : element.zIndex,
       }}
       initial={readOnly ? { opacity: 0, scale: 0.8, y: 20 } : { opacity: 0, scale: 0.5 }}
@@ -188,13 +190,12 @@ export function DraggableElement({
         if (!readOnly) onSelect();
       }}
     >
-      <div className="absolute left-0 top-0 w-0 h-0 pointer-events-none">
-        <motion.div 
-          style={{ x: "-50%", y: "-50%" }}
-          animate={{ rotate: element.rotation, scale: element.scale }}
-          className="relative pointer-events-auto"
-        >
-          {renderContent()}
+      <motion.div 
+        style={{ x: "-50%", y: "-50%" }}
+        animate={{ rotate: element.rotation, scale: element.scale }}
+        className="relative pointer-events-auto"
+      >
+        {renderContent()}
         
         {/* Professional Bounding Box Controls */}
         {isSelected && !readOnly && !isDragging && (
@@ -245,8 +246,7 @@ export function DraggableElement({
             )}
           </div>
         )}
-        </motion.div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
