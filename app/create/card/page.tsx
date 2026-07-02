@@ -49,7 +49,7 @@ export default function CardStudio() {
         />
 
         {/* Desktop Layout */}
-        <div className="hidden lg:grid grid-cols-[30%_1fr_30%] flex-1 min-h-0">
+        <div className="hidden lg:grid grid-cols-[280px_1fr_360px] xl:grid-cols-[320px_1fr_400px] flex-1 min-h-0">
           
           {/* Left Panel - Format Picker */}
           <div className="border-r border-border bg-white overflow-hidden relative">
