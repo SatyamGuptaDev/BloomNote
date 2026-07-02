@@ -24,13 +24,13 @@ export function ThemeLibrary({ selectedThemeId, onSelect }: ThemeLibraryProps) {
         <p className="text-sm text-muted-foreground mt-1">Pick an artistic style for your card.</p>
       </div>
 
-      <div className="p-4 md:p-5 space-y-6">
+      <div className="p-5 md:p-6 space-y-8">
         {Object.entries(categories).map(([category, themes]) => (
           <div key={category}>
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--stone)] mb-2.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--stone)] mb-3">
               {category}
             </h3>
-            <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {themes.map((theme) => {
                 const isSelected = selectedThemeId === theme.id;
                 
@@ -48,11 +48,11 @@ export function ThemeLibrary({ selectedThemeId, onSelect }: ThemeLibraryProps) {
                     {/* Placeholder for Theme Artwork */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
                       <div 
-                        className="w-6 h-6 rounded-full mb-1.5 opacity-50"
+                        className="w-8 h-8 rounded-full mb-2 opacity-50"
                         style={{ backgroundColor: theme.defaultPalette.accent }}
                       />
                       <span 
-                        className="text-[9px] font-bold text-center leading-tight"
+                        className="text-[10px] font-bold text-center leading-tight"
                         style={{ color: theme.defaultPalette.text }}
                       >
                         {theme.name}

@@ -17,17 +17,17 @@ export function CardFormatPicker({ selectedFormatId, onSelect }: CardFormatPicke
         <p className="text-sm text-muted-foreground mt-1">Choose the physical style of your card.</p>
       </div>
 
-      <div className="p-4 md:p-5 grid gap-3">
+      <div className="p-5 md:p-6 grid gap-4">
         {CARD_FORMATS.map((format) => {
           const isSelected = selectedFormatId === format.id;
           
           return (
             <motion.button
               key={format.id}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onSelect(format.id)}
-              className={`relative w-full text-left p-3.5 rounded-xl border-2 transition-all duration-300 overflow-hidden ${
+              className={`relative w-full text-left p-4 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
                 isSelected 
                   ? 'border-[var(--rose)] bg-[var(--rose)]/5 shadow-md' 
                   : 'border-transparent bg-[var(--cream)]/30 hover:bg-[var(--cream)]/60'
@@ -35,10 +35,10 @@ export function CardFormatPicker({ selectedFormatId, onSelect }: CardFormatPicke
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className={`font-semibold text-sm ${isSelected ? 'text-[var(--rose)]' : 'text-[var(--charcoal)]'}`}>
+                  <h3 className={`font-semibold text-base ${isSelected ? 'text-[var(--rose)]' : 'text-[var(--charcoal)]'}`}>
                     {format.name}
                   </h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed max-w-[200px]">
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[200px]">
                     {format.description}
                   </p>
                 </div>

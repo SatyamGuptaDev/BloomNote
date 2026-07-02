@@ -37,7 +37,7 @@ export default function CardStudio() {
   };
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-[var(--background)]">
+    <div className="flex flex-col h-screen overflow-hidden bg-[var(--background)]">
       <Header />
 
       <main className="flex-1 flex flex-col min-h-0 relative">
