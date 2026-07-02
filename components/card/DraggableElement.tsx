@@ -167,13 +167,13 @@ export function DraggableElement({
         y,
         zIndex: (isSelected && !readOnly) ? 9999 : element.zIndex,
       }}
-      initial={readOnly ? { opacity: 0, scale: 0.3, y: 30 } : { opacity: 0, scale: 0 }}
-      animate={{ opacity: 1 }}
+      initial={readOnly ? { opacity: 0, scale: 0.8, y: 20 } : { opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={readOnly ? {
         type: "spring",
-        stiffness: 120,
-        damping: 12,
-        delay: index * 0.08
+        stiffness: 150,
+        damping: 15,
+        delay: index * 0.1
       } : {
         type: "spring",
         stiffness: 300,
